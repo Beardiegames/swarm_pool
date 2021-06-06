@@ -1,73 +1,45 @@
+#[allow(dead_code)]
 
+// use std::alloc::{alloc, dealloc, Layout};
+// use std::marker::PhantomData;
 mod tests;
 
-#[allow(dead_code)]
-#[derive(Clone)]
-pub struct Spawn(usize);
 
-
-#[allow(dead_code)]
-pub struct Pool<T: Default>(Vec<T>);
-
-impl<T: Default> Pool<T> {
-
-    #[allow(dead_code)]
-    pub fn new(size: usize) -> Self {
-        let mut pool = Vec::<T>::new();
-        pool.resize_with(size, T::default);
-
-        Pool (pool)
-    }
-
-    #[allow(dead_code)]
-    pub fn get_body(&mut self, spawn: &Spawn) -> &mut T {
-        &mut self.0[spawn.0]
-    }
-}
-
-pub struct Swarm<T: Default>{
-    pool: Pool<T>,
-    spawns: Vec<Spawn>,
-    free: Vec<Spawn>,
+pub struct Swarm<T: Default> {
+    dat: Vec<T>,
+    arr: [*mut T; 1],
+    len: usize,
 }
 
 impl<T: Default> Swarm<T> {
 
-    #[allow(dead_code)]
-    pub fn new(size: usize) -> Self {
-        let spawns = Vec::<Spawn>::with_capacity(size);
-        let mut free = Vec::<Spawn>::with_capacity(size);
-        for i in 0..size { free.push(Spawn (i)); }
+    pub fn new() -> Self {
+        let mut dat = vec![T::default()];
+        let dat_ref: *mut T = &mut dat [0];
+        let arr: [*mut T; 1] = [dat_ref];
 
-        Swarm { pool: Pool::new(size), spawns, free, }
+        Swarm { arr, len: 1, dat }
     }
 
-    #[allow(dead_code)]
-    pub fn get_body(&mut self, spawn: &Spawn) -> &mut T {
-        self.pool.get_body(spawn)
-    }
-
-    #[allow(dead_code)]
-    pub fn spawn(&mut self) -> Option<Spawn> {
-        if let Some(spawn) = self.free.pop() {
-            self.spawns.push(spawn.clone());
-            Some(spawn)
-        } else {
-            None
+    pub fn spawn(&mut self) {
+        if self.len < self.dat.len() {
+            self.len += 1;
         }
     }
 
-    #[allow(dead_code)]
-    // NOTE: killing becomes slower as number of spawns increases
-    pub fn kill(&mut self, spawn: Spawn) {
-        if let Some(index) = self.spawns.iter().position(|x| x.0 == spawn.0) {
-            self.free.push(self.spawns.remove(index));
-        }
+    pub fn kill(&mut self, at_index: usize) {
+        self.arr[at_index] = self.arr[self.len-2];  // swap to back
+        self.len -= 1;                              // decrement size
     }
+}
 
-    pub fn for_each(&mut self, update: fn(&Spawn, &mut Pool<T>)) {
-        for spawn in &self.spawns {
-            update(&spawn, &mut self.pool);
+
+pub fn for_each<T: Default>(ref_arr: &mut Swarm<T>, update: fn(&mut T)) {
+    unsafe {
+        let mut i = 0;
+        while i < ref_arr.len {
+            update(&mut *ref_arr.arr[i]);
+            i += 1;
         }
     }
 }
