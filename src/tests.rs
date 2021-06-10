@@ -52,28 +52,27 @@ pub struct Minion { pub times_called: u128 }
 // }
 
 #[test]
-fn single_update_speed() {
-    let mut swarm = Swarm::<Minion>::new();
-    //let spawn = swarm.pool.spawn().unwrap();
-    //swarm.pool.spawn();
+fn single_update_speed() -> Result<(), SwarmError> {
+
+    const num_entities: usize = 1_000_000;
+    let num_updates = 100;
+
+    // get thread stack speed
+    // let mut baseline = [Minion::default(); num_entities];
+    // let now = SystemTime::now();
+    // for _i in 0..num_updates {
+    //     for j in 0..num_entities {
+    //         baseline[j].add_one();
+    //     }
+    // }
+    // let elapsed_base = now.elapsed();
 
 
-    // get thread base speed
-    let mut baseline = [Minion::default()];
+    // get thread heap speed
+    let mut vec_test = vec![Minion::default(); num_entities];
     let now = SystemTime::now();
-    for _i in 0..100_000_000 {
-        for j in 0..1 {
-            baseline[j].add_one();
-        }
-    }
-    let elapsed_base = now.elapsed();
-
-
-    // get thread vec speed
-    let mut vec_test = vec![Minion::default()];
-    let now = SystemTime::now();
-    for _i in 0..100_000_000 {
-        for j in 0..1 {
+    for _i in 0..num_updates {
+        for j in 0..num_entities {
             vec_test[j].add_one();
         }
     }
@@ -83,31 +82,40 @@ fn single_update_speed() {
     // get swarm system speed
     //let mut ref_test: *mut Minion = &mut vec![Minion::default()][0];
     //let mut ref_vals = [ref_test];
-    let mut ref_arr: Swarm<Minion> = Swarm::new();
+    let mut swarm: Swarm<Minion> = Swarm::new(1_000_000, Box::new(AddSystem))?;
+    for _e in 0..num_entities {
+        swarm.spawn();
+    }
+
     let now = SystemTime::now();
-    for _i2 in 0..100_000_000 { 
-        for_each(&mut ref_arr, add_system);
+    for _i2 in 0..num_updates { 
+        swarm.for_each();
     }
     let elapsed_res = now.elapsed();
 
 
-    let base_time = (elapsed_base.unwrap().as_nanos() as f64) * 0.001;
-    let base_speed =  baseline[0].times_called as f64 / base_time;
-    println!("stack baseline was called {} times", baseline[0].times_called);
-    println!("stack max speed = {} Mil calls/s\n", base_speed);
+    // let base_time = (elapsed_base.unwrap().as_nanos() as f64) * 0.001;
+    // let base_speed =  (baseline[0].times_called * num_entities as u128) as f64 / base_time;
+    // println!("stack baseline was called {} times", baseline[0].times_called);
+    // println!("stack max speed = {} Mil calls/s\n", base_speed);
 
     let vec_time = (elapsed_vec.unwrap().as_nanos() as f64) * 0.001;
-    let vec_speed =  vec_test[0].times_called as f64 / vec_time;
+    let vec_speed =  (vec_test[0].times_called * num_entities as u128) as f64 / vec_time;
     println!("heap baseline was called {} times", vec_test[0].times_called);
     println!("heap max speed = {} Mil calls/s\n", vec_speed);
 
     let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
-    let swarm_speed = ref_arr.dat[0].times_called as f64 / swarm_time;
-    println!("spawn was called {} times", ref_arr.dat[0].times_called);
+    let swarm_speed = (swarm.get_mut(0).times_called * num_entities as u128) as f64 / swarm_time;
+    println!("spawn 1 was called {} times", swarm.get_mut(0).times_called);
+    println!("spawn 2 was called {} times", swarm.get_mut(1).times_called);
+    println!("spawn {} was called {} times", num_entities-1, swarm.get_mut(num_entities-2).times_called);
+    println!("spawn {} was called {} times", num_entities, swarm.get_mut(num_entities-1).times_called);
     println!("system updates = {} Mil calls/s\n", swarm_speed);
 
-    let weight = ((swarm_speed / base_speed) * 100_000.0).round() / 10_000.0;
-    println!("running at '{}%' of absolute maximum", weight);
+    //let stack_weight = ((swarm_speed / base_speed) * 100_000.0).round() / 1_000.0;
+    let heap_weight = ((swarm_speed / vec_speed) * 100_000.0).round() / 1_000.0;
+    //println!("running at '{}%' of stack maximum", stack_weight);
+    println!("running at '{}%' of heap maximum", heap_weight);
 
     // unsafe { 
     //     let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
@@ -122,10 +130,21 @@ fn single_update_speed() {
     
     //assert!(weight >= 20.0, "Goal should be at least 20% of the maximum speed (Maxixmum is the durations of single methode call)");
     assert!(false);
+    Ok(())
 }
 
-fn add_system(x: &mut Minion) {
-    x.add_one();
+// fn add_system(x: &mut Minion) {
+//     x.add_one();
+// }
+
+pub struct AddSystem;
+
+impl System for AddSystem {
+    type Entity = Minion;
+
+    fn update(&mut self, entity: &mut Minion) {
+        entity.add_one();
+    }
 }
 
 
