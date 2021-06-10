@@ -1,8 +1,7 @@
 #[allow(dead_code)]
 
-use std::alloc::{alloc, dealloc, Layout, LayoutError};
-use std::marker::PhantomData;
-
+use std::iter::FromIterator;
+use std::collections::VecDeque;
 mod tests;
 
 #[derive(Debug)]
@@ -10,6 +9,7 @@ pub enum SwarmError {
     MemoryLayoutFailure,
 }
 
+type Pointer = usize;
 pub type SpawnId = usize;
 
 pub trait System {
@@ -17,86 +17,72 @@ pub trait System {
     fn update(&mut self, entity: &mut Self::Entity);
 }
 
+
 pub struct Swarm<T: Default + Copy> {
+    map: Box<[Pointer]>,
     content: Vec<T>,
-    //phan: PhantomData<T>,
-    //ptr: *mut u8,
+    free: Vec<Pointer>,
     len: usize,
     max: usize,
-    //system: fn(&mut T),
     system: Box<dyn System<Entity = T>>,
 }
 
 impl<T: Default + Copy> Swarm<T> {
 
-    pub fn new(size: usize, system: Box<dyn System<Entity = T>>) -> Result<Self, SwarmError> {
-
-        //let fmt: Layout;
-        // let ptr: *mut u8;
-
-        // unsafe {
-        //     let set_mem = Layout::array::<T>(1_000_000)
-        //         .map_err(|_e| SwarmError::MemoryLayoutFailure)?;
-        //     ptr = alloc(set_mem);
-        //     *(ptr as *mut [T; 1_000_000]) = [T::default(); 1_000_000];
-        // }
-        
-
-        Ok (Swarm { 
-            //phan: PhantomData,
-            //ptr,
+    pub fn new(size: usize, system: Box<dyn System<Entity = T>>) -> Self {
+        Swarm { 
+            map: Box::from_iter((0..size).into_iter()),
             content: vec![T::default(); size],
+            free: Vec::new(),
             len: 0,
             max: size,
             system,
-        })
+        }
     }
 
     pub fn spawn(&mut self) -> Option<SpawnId> {
         if self.len < self.max {
             self.len += 1;
-            Some(self.len)
+            if self.free.len() > 0 {
+                self.free.pop()
+            } else {
+                Some(self.map[self.len-1])
+            }
         } else {
             None
         }
     }
 
-    pub fn kill(&mut self, at_index: usize) {
-        self.content[at_index] = self.content[self.len-2];  // swap to back
-        self.len -= 1;                                      // decrement size
+    // What the hell happens here?
+    //
+    //          1xA          3xC           2+A
+    // id:  1A|2B|3C  >  1x|2B|3C  >  1x|2B|3x  >  1x|2B|3C
+    //      --------     --------     --------     --------
+    // map: 1 |2 |3   >  3 |2 | 1  >  3 | 1| 2  >  2 |1 | 3  // swap with pointer last
+    // con: A |B |C   >  C |B |*A  >  B |*C|*A  >  B |C |*A  // swap with last
+
+    pub fn kill(&mut self, id: SpawnId) {
+        if self.len > 1 {
+            // swap content to back
+            let id_ptr = self.map[id];
+            self.content[id_ptr] = self.content[self.len-2];  
+            // swap content pointers in map
+            self.map[id] = self.map[self.len-2];
+            self.map[self.len-2] = id_ptr;
+
+            self.free.push(id);
+        }
+        // decrement size             
+        self.len -= 1;                                      
     }
 
-    pub fn for_each(&mut self) {//}, update: fn(&mut T)) {
-        //unsafe {
-            // let mut i = 0;
-            // let dat = &mut *(self.ptr as *mut [T; 1_000_000]);
-            // while i < self.len as usize {
-            //     update(&mut dat[i]);
-            //     i += 1;
-            // }
-            for i in 0..self.len{
-                //update(&mut self.content[i]);
-                //(self.system)(&mut self.content[i]);
-                self.system.update(&mut self.content[i]);
-            }
-        //}
+    pub fn for_each(&mut self) {
+        for i in 0..self.len {
+            self.system.update(&mut self.content[i]);
+        }
     }
 
-    pub fn get_mut(&mut self, id: SpawnId) -> &mut T {
-        // unsafe {
-        //     &mut (*(self.ptr as *mut [T; 1_000_000]))[n]
-        // }
+    pub fn get_mut(&mut self, id: Pointer) -> &mut T {
         &mut self.content[id]
     }
 }
-
-
-// pub fn for_each<T: Default>(swarm: &mut Swarm<T>, update: fn(&mut T)) {
-//     unsafe {
-//         let mut i = 0;
-//         while i < swarm.len {
-//             update(&mut *swarm.ptr.offset(i));
-//             i += 1;
-//         }
-//     }
-// }

@@ -82,7 +82,7 @@ fn single_update_speed() -> Result<(), SwarmError> {
     // get swarm system speed
     //let mut ref_test: *mut Minion = &mut vec![Minion::default()][0];
     //let mut ref_vals = [ref_test];
-    let mut swarm: Swarm<Minion> = Swarm::new(1_000_000, Box::new(AddSystem))?;
+    let mut swarm: Swarm<Minion> = Swarm::new(1_000_000, Box::new(AddSystem));
     for _e in 0..num_entities {
         swarm.spawn();
     }
