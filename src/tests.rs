@@ -82,14 +82,13 @@ fn single_update_speed() -> Result<(), SwarmError> {
     // get swarm system speed
     //let mut ref_test: *mut Minion = &mut vec![Minion::default()][0];
     //let mut ref_vals = [ref_test];
-    let mut swarm: Swarm<Minion> = Swarm::new(1_000_000, Box::new(AddSystem));
-    for _e in 0..num_entities {
-        swarm.spawn();
-    }
+    let mut swarm: Swarm<Minion> = Swarm::new(1_000_000);
+    let mut add_system: System<Minion> = System::new(&[0], add_system);
+    for _e in 0..num_entities { swarm.spawn(); }
 
     let now = SystemTime::now();
     for _i2 in 0..num_updates { 
-        swarm.for_each();
+        add_system.run(&mut swarm);
     }
     let elapsed_res = now.elapsed();
 
@@ -133,19 +132,18 @@ fn single_update_speed() -> Result<(), SwarmError> {
     Ok(())
 }
 
-// fn add_system(x: &mut Minion) {
-//     x.add_one();
-// }
-
-pub struct AddSystem;
-
-impl System for AddSystem {
-    type Entity = Minion;
-
-    fn update(&mut self, entity: &mut Minion) {
-        entity.add_one();
-    }
+fn add_system(x: &mut Minion) {
+    x.add_one();
 }
+
+// pub struct AddSystem;
+
+// impl System<Minion> for AddSystem {
+
+//     fn update(&mut self, entity: &mut Minion) {
+//         entity.add_one();
+//     }
+// }
 
 
 pub trait AddOne {
