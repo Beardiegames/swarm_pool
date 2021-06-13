@@ -1,8 +1,10 @@
 
 #[allow(dead_code)]
 
+pub mod ecs;
+
 use std::iter::FromIterator;
-mod tests;
+use ecs::{ Entity };
 
 #[derive(Debug)]
 pub enum SwarmError {
@@ -11,46 +13,6 @@ pub enum SwarmError {
 
 type Pointer = usize;
 pub type Spawn = usize;
-pub type Component = usize;
-
-#[derive(Copy, Clone)]
-pub struct Entity(u32);
-
-impl Entity {
-    pub fn clear(&mut self) { self.0 = 0; }
-
-    pub fn add_component(&mut self, component: Component) {
-        self.0 |= 1 << component;
-    }
-
-    pub fn remove_component(&mut self, component: Component) {
-        self.0 &= !(1 << component);
-    }
-}
-
-pub struct System<T: Default + Copy> {
-    req: Entity,
-    updater: fn(&mut T),
-}
-
-impl<T:Default + Copy> System<T> {
-
-    fn new(require_components: &[Component], updater: fn(&mut T)) -> Self {
-        let mut req = Entity (0);
-        for c in require_components {
-            req.add_component(*c);
-        }
-        System { req, updater }
-    }
-
-    fn run(&mut self, swarm: &mut Swarm<T>) {
-        for i in 0..swarm.len {
-            if self.req.0 == swarm.entities[i].0 & self.req.0 {
-                (self.updater)(&mut swarm.content[i]);
-            }
-        }
-    }
-}
 
 pub struct Swarm<T: Default + Copy> {
     entities: Box<[Entity]>,
@@ -124,7 +86,23 @@ impl<T: Default + Copy> Swarm<T> {
         self.len -= 1;                                      
     }
 
-    pub fn get_mut(&mut self, id: Pointer) -> &mut T {
-        &mut self.content[id]
+    pub fn for_each(&mut self, handler: fn(&mut T)) {
+        for i in 0..self.len {
+            handler(&mut self.content[i]);
+        }
     }
+
+    pub fn get_mut(&mut self, id: &Spawn) -> &mut T { 
+        &mut self.content[self.map[*id]] 
+    }
+
+    pub fn get_ref(&self, id: &Spawn) -> &T { 
+        &self.content[self.map[*id]] 
+    }
+
+    pub fn count(&self) -> usize { self.len }
+
+    pub fn max_size(&self) -> usize { self.max }
 }
+
+
