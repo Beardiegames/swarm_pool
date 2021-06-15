@@ -13,6 +13,10 @@ impl Minion {
     }
 }
 
+fn main() {
+    
+}
+
 #[test]
 fn creating_a_swarm() {
     let swarm = Swarm::<Minion>::new(10);

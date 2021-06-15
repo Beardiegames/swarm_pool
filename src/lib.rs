@@ -4,7 +4,7 @@
 pub mod ecs;
 
 use std::iter::FromIterator;
-use ecs::{ Entity };
+use ecs::{ Entity, Component };
 
 #[derive(Debug)]
 pub enum SwarmError {
@@ -98,6 +98,14 @@ impl<T: Default + Copy> Swarm<T> {
 
     pub fn get_ref(&self, id: &Spawn) -> &T { 
         &self.content[self.map[*id]] 
+    }
+
+    pub fn add_component(&mut self, id: &Spawn, component: Component) {
+        self.entities[self.map[*id]].add_component(component);
+    }
+
+    pub fn remove_component(&mut self, id: &Spawn, component: Component) {
+        self.entities[self.map[*id]].remove_component(component);
     }
 
     pub fn count(&self) -> usize { self.len }
