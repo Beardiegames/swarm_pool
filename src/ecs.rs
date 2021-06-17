@@ -1,3 +1,5 @@
+
+
 use super::*;
 
 #[derive(Copy, Clone)]
@@ -5,7 +7,9 @@ pub struct Entity(pub(crate) u32);
 
 impl Entity {
 
-    const fn new() -> Self { Entity (0) }
+    pub const fn from_requirements(req: u32) -> Entity {
+        Entity(req)
+    }
 
     pub fn clear(&mut self) { self.0 = 0; }
 
@@ -19,26 +23,24 @@ impl Entity {
 
 }
 
-impl From<[Component; 1]> for Entity {
-    fn from(components: [Component; 1]) -> Entity {
-        let mut require = Entity (0);
-        for c in &components {
-            require.0 |= 1 << c;
-        }
-        require
-    }
-}
-
 pub type Component = usize;
 
 pub type RequiredComponents = Entity;
+
+const fn setup_requirentments(component: Component) -> Entity {
+    let mut bits: u32 = 0;
+    bits |= 1 << component;
+    Entity (bits)
+}
 
 
 //pub type UpdateSystem<T> = fn(&Spawn, &mut Swarm<T>);
 
 pub trait System<T: Default + Copy> {
 
-    fn requirements(&mut self) -> &mut RequiredComponents;
+    const COMPONENTS: Entity;
+
+    //fn requirements(&mut self) -> &mut RequiredComponents;
 
     fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<T>);
 
@@ -50,13 +52,13 @@ pub trait System<T: Default + Copy> {
     //     System { require, updater }
     // }
 
-    fn add_requirement(&mut self, component: Component) {
-        self.requirements().add_component(component);
-    }
+    // fn add_requirement(&mut self, component: Component) {
+    //     self.requirements().add_component(component);
+    // }
 
     fn run(&mut self, swarm: &mut Swarm<T>) {
         for i in 0..swarm.len {
-            if self.requirements().0 == swarm.entities[i].0 & self.requirements().0 {
+            if Self::COMPONENTS.0 == swarm.entities[i].0 & Self::COMPONENTS.0 {
                 self.update(&i, swarm);
             }
         }

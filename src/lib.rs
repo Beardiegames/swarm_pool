@@ -1,4 +1,16 @@
 
+
+#[macro_export]
+macro_rules! requirements {
+    ($($comp:expr),+) => {
+        let mut v = 0u32;
+        $(
+            v |= 1 << $comp
+        )+
+        v
+    };
+}
+
 #[allow(dead_code)]
 
 pub mod ecs;

@@ -1,5 +1,7 @@
 #[cfg(test)]
 
+use swarm::ecs::requirements;
+
 use swarm::{ Swarm, SwarmError, Spawn };
 use swarm::ecs::{ Entity, Component, System };
 
@@ -26,9 +28,8 @@ impl Into<Component> for Components {
 pub struct HealthSystem ;
 
 impl System<Minion> for HealthSystem {
-    fn requirements() -> RequiredComponents {
+    const COMPONENTS: Entity = Entity::from_requirements(swarm::requirements!(Components::Health.into()));
 
-    }
     fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<Minion>) {
         swarm.get_mut(spawn).health += 1;
     }
