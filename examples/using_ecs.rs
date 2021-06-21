@@ -1,9 +1,7 @@
 #[cfg(test)]
 
-use swarm::ecs::requirements;
-
 use swarm::{ Swarm, SwarmError, Spawn };
-use swarm::ecs::{ Entity, Component, System };
+use swarm::ecs::{ Entity, RequiredComponents, System };
 
 fn main() {
 
@@ -16,19 +14,15 @@ pub struct Minion {
     all: i8,
 }
 
-pub enum Components { Health, Strength, }
-
-impl Into<Component> for Components {
-    fn into(self) -> Component {
-        self as Component + 1
-    }
-}
-
+#[derive(Copy, Clone)]
+pub enum GameComponents { Health, Strength, }
 
 pub struct HealthSystem ;
 
 impl System<Minion> for HealthSystem {
-    const COMPONENTS: Entity = Entity::from_requirements(swarm::requirements!(Components::Health.into()));
+    const COMPONENTS: RequiredComponents = RequiredComponents::new(&[
+        GameComponents::Health as u8,
+    ]);
 
     fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<Minion>) {
         swarm.get_mut(spawn).health += 1;
@@ -56,9 +50,6 @@ impl System<Minion> for HealthSystem {
 #[test]
 fn ecs_setup() {
     let mut swarm = Swarm::<Minion>::new(10);
-
-    let required_components: &[Component] = &[ Components::Health.into() ];
-
     let mut system = HealthSystem;
 
     let spawn = swarm.spawn().unwrap();
@@ -68,7 +59,7 @@ fn ecs_setup() {
     // spawn is not updated because it does not have the health components
     assert_eq!(swarm.get_ref(&spawn).health, 0);
 
-    swarm.add_component(&spawn, Components::Health.into());
+    swarm.add_component(&spawn, GameComponents::Health as u8);
     system.run(&mut swarm);
     assert_eq!(swarm.get_ref(&spawn).health, 1);
 }

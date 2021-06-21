@@ -1,22 +1,29 @@
 
 
-#[macro_export]
-macro_rules! requirements {
-    ($($comp:expr),+) => {
-        let mut v = 0u32;
-        $(
-            v |= 1 << $comp
-        )+
-        v
-    };
-}
+// #[macro_export]
+// macro_rules! require {
+//     ( $( $x:expr ),* ) => {
+//         {
+//             let mut v = 0u32;
+//             $(
+//                 swarm::add_component!(v, $x);
+//             )*
+//             v
+//         }
+//     };
+// }
+
+// #[macro_export]
+// macro_rules! add_component {
+//     ($v:expr, $c:expr) => { $v = $v | 1 << $c; };
+// }
 
 #[allow(dead_code)]
 
 pub mod ecs;
 
 use std::iter::FromIterator;
-use ecs::{ Entity, Component };
+use ecs::{ Entity };
 
 #[derive(Debug)]
 pub enum SwarmError {
@@ -51,8 +58,6 @@ impl<T: Default + Copy> Swarm<T> {
     pub fn spawn(&mut self) -> Option<Spawn> {
         if self.len < self.max {
             self.len += 1;
-            self.entities[self.len-1].add_component(0);
-
             if self.free.len() > 0 {
                 self.free.pop()
             } else {
@@ -104,6 +109,10 @@ impl<T: Default + Copy> Swarm<T> {
         }
     }
 
+    pub fn is_active(&self, id: &Spawn) -> bool {
+        self.map[*id] < self.len
+    }
+
     pub fn get_mut(&mut self, id: &Spawn) -> &mut T { 
         &mut self.content[self.map[*id]] 
     }
@@ -112,11 +121,11 @@ impl<T: Default + Copy> Swarm<T> {
         &self.content[self.map[*id]] 
     }
 
-    pub fn add_component(&mut self, id: &Spawn, component: Component) {
+    pub fn add_component(&mut self, id: &Spawn, component: u8) {
         self.entities[self.map[*id]].add_component(component);
     }
 
-    pub fn remove_component(&mut self, id: &Spawn, component: Component) {
+    pub fn remove_component(&mut self, id: &Spawn, component: u8) {
         self.entities[self.map[*id]].remove_component(component);
     }
 

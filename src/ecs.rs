@@ -2,59 +2,65 @@
 
 use super::*;
 
+pub struct RequiredComponents(pub(crate) u64);
+
+impl RequiredComponents {
+    pub const fn new(components: &[u8]) -> Self {
+        let mut req = RequiredComponents(0);
+        let i =0;
+        while i < components.len() {
+            let c = components[i] + 1;
+            let bit = 1 << c;
+            req.0 = req.0 | bit;
+        }   
+        req
+    }
+}
+
 #[derive(Copy, Clone)]
-pub struct Entity(pub(crate) u32);
+pub struct Entity(pub(crate) u64);
 
 impl Entity {
 
-    pub const fn from_requirements(req: u32) -> Entity {
-        Entity(req)
-    }
-
     pub fn clear(&mut self) { self.0 = 0; }
 
-    pub fn add_component(&mut self, component: Component) {
-        self.0 |= 1 << component;
+    pub fn add_component(&mut self, component: u8) {
+        self.0 |= 1 << (component + 1);
     }
 
-    pub fn remove_component(&mut self, component: Component) {
-        self.0 &= !(1 << component);
+    pub fn remove_component(&mut self, component: u8) {
+        self.0 &= !(1 << (component + 1));
     }
 
 }
 
-pub type Component = usize;
+// #[derive(Clone)]
+// pub struct Component(usize);
 
-pub type RequiredComponents = Entity;
+// impl Component {
+//     pub const fn new(num: usize) -> Self { //} Result<Self, &'static str> {
+//         Component (num)
+//         // match num > 0 || num < 64 {
+//         //     true => Ok(Component (num)),
+//         //     false => Err("Component Err! parameter 'num' out of bounds: 
+//         //     Components should have a numeric value greater than zero and 
+//         //     smaller than 32!"),
+//         // }
+//     }
+// }
 
-const fn setup_requirentments(component: Component) -> Entity {
-    let mut bits: u32 = 0;
-    bits |= 1 << component;
-    Entity (bits)
-}
 
-
-//pub type UpdateSystem<T> = fn(&Spawn, &mut Swarm<T>);
+// pub trait Component: Into<u8> + Copy {
+//     fn value(self) -> u8 {
+//         self.into() + 1
+//     }
+// }
 
 pub trait System<T: Default + Copy> {
 
-    const COMPONENTS: Entity;
-
-    //fn requirements(&mut self) -> &mut RequiredComponents;
+    const COMPONENTS: RequiredComponents;
 
     fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<T>);
-
-    // fn new(require_components: &[Component], updater: UpdateSystem<T>) -> Self {
-    //     let mut require = Entity (0);
-    //     for c in require_components {
-    //         require.add_component(*c);
-    //     }
-    //     System { require, updater }
-    // }
-
-    // fn add_requirement(&mut self, component: Component) {
-    //     self.requirements().add_component(component);
-    // }
 
     fn run(&mut self, swarm: &mut Swarm<T>) {
         for i in 0..swarm.len {
