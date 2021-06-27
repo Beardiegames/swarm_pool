@@ -1,9 +1,37 @@
 
 
 use super::*;
-use std::num::NonZeroU8;
 
-pub type Component = NonZeroU8;
+
+pub enum ComponentError { 
+    ZeroNotAllowed,
+}
+
+pub struct Component(std::num::NonZeroU8);
+
+impl Component {
+    pub fn new(value: u8) -> Self {
+        if value > 254 {
+            panic!("parameter from(value: u8) cannot be bigger than 254!");
+        }
+        match std::num::NonZeroU8::new(value + 1) {
+            Some(v) => Component (v),
+            None => panic!("parameter from(value: u8) does not allow a value of zero!"),
+        }
+    }
+}
+
+//pub type Component = core::num::NonZeroU8;
+
+// pub trait Component: From<u8> {
+//     fn convert(self) -> core::num::NonZeroU8 {
+//         std::num::NonZeroU8::from(u8::from(self))
+//     }
+//     // fn convert(&self) -> Result<core::num::NonZeroU8, ComponentError> {
+//     //     core::num::NonZeroU8::try_from(u8::from(self))
+//     //         .map_err(|_e| ComponentError::ZeroValueNotAllowed)
+//     // } 
+// }
 
 #[derive(Copy, Clone)]
 pub struct Entity(pub(crate) u64);
@@ -12,12 +40,12 @@ impl Entity {
 
     pub fn clear(&mut self) { self.0 = 0; }
 
-    pub fn add_component(&mut self, component: NonZeroU8) {
-        self.0 |= 1 << component.get();
+    pub fn add_component(&mut self, component: Component) {
+        self.0 |= 1 << component.0.get();
     }
 
-    pub fn remove_component(&mut self, component: NonZeroU8) {
-        self.0 &= !(1 << component.get());
+    pub fn remove_component(&mut self, component: Component) {
+        self.0 &= !(1 << component.0.get());
     }
 
 }

@@ -2,6 +2,7 @@
 
 use swarm::{ Swarm, SwarmError, Spawn };
 use swarm::ecs::{ Entity, Component, SystemBuilder, System };
+use std::convert::TryFrom;
 
 fn main() {
 
@@ -14,14 +15,16 @@ pub struct Minion {
     both: i8,
 }
 
+
 #[derive(Copy, Clone)]
+#[repr(u8)]
 pub enum GameComponents { Health, Strength, Move }
 
 
 pub struct HealthSystem;
 
 impl System<Minion> for HealthSystem {
-    fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<Minion>) {
+    fn update(&mut self, spawn: &swarm::Spawn, swarm: &mut swarm::Swarm<Minion>) {
         swarm.get_mut(spawn).health += 1;
     }
 }
@@ -29,7 +32,7 @@ impl System<Minion> for HealthSystem {
 pub struct StrengthSystem;
 
 impl System<Minion> for StrengthSystem {
-    fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<Minion>) {
+    fn update(&mut self, spawn: &swarm::Spawn, swarm: &mut swarm::Swarm<Minion>) {
         swarm.get_mut(spawn).strength += 1;
     }
 }
@@ -38,7 +41,7 @@ impl System<Minion> for StrengthSystem {
 pub struct BothSystem;
 
 impl System<Minion> for BothSystem {
-    fn update(&mut self, spawn: &Spawn, swarm: &mut Swarm<Minion>) {
+    fn update(&mut self, spawn: &swarm::Spawn, swarm: &mut swarm::Swarm<Minion>) {
         swarm.get_mut(spawn).both += 1;
     }
 }
@@ -47,7 +50,7 @@ impl System<Minion> for BothSystem {
 fn ecs_setup() {
     let mut swarm = Swarm::<Minion>::new(10);
     let mut system = SystemBuilder::new(HealthSystem) 
-        .requires_component(GameComponents::Health as u8)
+        .requires_component(Component::new(GameComponents::Health as u8))
         .build();
 
     let spawn = swarm.spawn().unwrap();
@@ -57,7 +60,7 @@ fn ecs_setup() {
     // spawn is not updated because it does not have the health component
     assert_eq!(swarm.get_ref(&spawn).health, 0);
 
-    swarm.add_component(&spawn, GameComponents::Health as u8);
+    swarm.add_component(&spawn, Component::new(GameComponents::Health as u8));
     system.run(&mut swarm);
     assert_eq!(swarm.get_ref(&spawn).health, 1);
 }
@@ -68,25 +71,25 @@ fn using_multiple_systems() {
     let mut swarm = Swarm::<Minion>::new(10);
 
     let mut health_system =  SystemBuilder::new(HealthSystem)
-        .requires_component(GameComponents::Health as u8)
+        .requires_component(Component::new(GameComponents::Health as u8))
         .build();
     let mut strength_system =  SystemBuilder::new(StrengthSystem)
-        .requires_component(GameComponents::Strength as u8)
+        .requires_component(Component::new(GameComponents::Strength as u8))
         .build();
     let mut both_system =  SystemBuilder::new(BothSystem)
-        .requires_component(GameComponents::Health as u8)
-        .requires_component(GameComponents::Strength as u8)
+        .requires_component(Component::new(GameComponents::Health as u8))
+        .requires_component(Component::new(GameComponents::Strength as u8))
         .build();
 
     let spawn1 = swarm.spawn().unwrap();
-    swarm.add_component(&spawn1, GameComponents::Health.into());
+    swarm.add_component(&spawn1, Component::new(GameComponents::Health as u8));
 
     let spawn2 = swarm.spawn().unwrap();
-    swarm.add_component(&spawn2, GameComponents::Strength.into());
+    swarm.add_component(&spawn2, Component::new(GameComponents::Strength as u8));
 
     let spawn3 = swarm.spawn().unwrap();
-    swarm.add_component(&spawn3, GameComponents::Health.into());
-    swarm.add_component(&spawn3, GameComponents::Strength.into());
+    swarm.add_component(&spawn3, Component::new(GameComponents::Health as u8));
+    swarm.add_component(&spawn3, Component::new(GameComponents::Strength as u8));
 
     health_system.run(&mut swarm);
     assert_eq!(swarm.get_ref(&spawn1).health, 1);
