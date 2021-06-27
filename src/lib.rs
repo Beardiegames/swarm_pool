@@ -1,22 +1,13 @@
-
-
 #[allow(dead_code)]
-
-pub mod ecs;
+mod tests;
 
 use std::iter::FromIterator;
-use ecs::{ Entity, Component };
-
-#[derive(Debug)]
-pub enum SwarmError {
-    MemoryLayoutFailure,
-}
 
 type Pointer = usize;
 pub type Spawn = usize;
 
-pub struct Swarm<T: Default + Copy> {
-    entities: Box<[Entity]>,
+
+pub struct Swarm<T: Default + Clone> {
     map: Box<[Pointer]>,
     content: Vec<T>,
     free: Vec<Pointer>,
@@ -24,11 +15,10 @@ pub struct Swarm<T: Default + Copy> {
     max: usize,
 }
 
-impl<T: Default + Copy> Swarm<T> {
+impl<T: Default + Clone> Swarm<T> {
 
     pub fn new(size: usize) -> Self {
         Swarm { 
-            entities: Box::from_iter((0..size).into_iter().map(|_i| Entity (0))),
             map: Box::from_iter((0..size).into_iter()),
             content: vec![T::default(); size],
             free: Vec::new(),
@@ -57,14 +47,11 @@ impl<T: Default + Copy> Swarm<T> {
     // len is shortened by one
 
     pub fn kill(&mut self, target: Spawn) {
-        self.entities[self.map[target]].clear();
-        
         if self.len > 1 {
             let last_pos = self.len - 2;
             let target_pos = self.map[target];
             // swap content to back
-            self.content[target_pos] = self.content[last_pos];  
-            self.entities[target_pos] = self.entities[last_pos];
+            self.content[target_pos] = self.content[last_pos].clone();  
             // swap content pointers in map
             self.map[target] = self.map[last_pos];
             self.map[last_pos] = target_pos;
@@ -93,17 +80,15 @@ impl<T: Default + Copy> Swarm<T> {
         &self.content[self.map[*id]] 
     }
 
-    pub fn add_component(&mut self, id: &Spawn, component: Component) {
-        self.entities[self.map[*id]].add_component(component);
-    }
-
-    pub fn remove_component(&mut self, id: &Spawn, component: Component) {
-        self.entities[self.map[*id]].remove_component(component);
-    }
-
     pub fn count(&self) -> usize { self.len }
 
     pub fn max_size(&self) -> usize { self.max }
+}
+
+pub fn update<T: Default + Clone>(swarm: &mut Swarm<T>, handler: fn(&Spawn, &mut Swarm<T>)) {
+    for i in 0..swarm.len {
+        handler(&i, swarm);
+    }
 }
 
 
