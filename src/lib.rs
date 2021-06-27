@@ -1,29 +1,11 @@
 
 
-// #[macro_export]
-// macro_rules! require {
-//     ( $( $x:expr ),* ) => {
-//         {
-//             let mut v = 0u32;
-//             $(
-//                 swarm::add_component!(v, $x);
-//             )*
-//             v
-//         }
-//     };
-// }
-
-// #[macro_export]
-// macro_rules! add_component {
-//     ($v:expr, $c:expr) => { $v = $v | 1 << $c; };
-// }
-
 #[allow(dead_code)]
 
 pub mod ecs;
 
 use std::iter::FromIterator;
-use ecs::{ Entity };
+use ecs::{ Entity, Component };
 
 #[derive(Debug)]
 pub enum SwarmError {
@@ -68,36 +50,26 @@ impl<T: Default + Copy> Swarm<T> {
         }
     }
 
-    // What the hell happens here?
-    //  -content[] is an array of the actual entity data objects
-    //  -map[] is an array of pointers to the entities inside content
-    //  -id's are the index pointers to map
-    //
+
     // The content at index map[id] is swapped with the last entity
     // value of map[id] is changed to point to the last entity
     // value of map[last pointer] is changed to id
     // len is shortened by one
-    //
-    //          1xA          3xC           2+A
-    // id:  1A|2B|3C  >  1x|2B|3C  >  1x|2B|3x  >  1x|2B|3C
-    //      --------     --------     --------     --------
-    // map: 1 |2 |3   >  3 |2 | 1  >  3 | 1| 2  >  2 |1 | 3  // swap with pointer last
-    // con: A |B |C   >  C |B |*A  >  B |*C|*A  >  B |C |*A  // swap with last
 
-    pub fn kill(&mut self, id: Spawn) {
-        self.entities[self.map[id]].clear();
+    pub fn kill(&mut self, target: Spawn) {
+        self.entities[self.map[target]].clear();
         
         if self.len > 1 {
-            let last = self.len - 2;
+            let last_pos = self.len - 2;
+            let target_pos = self.map[target];
             // swap content to back
-            let id_ptr = self.map[id];
-            self.content[id_ptr] = self.content[last];  
-            self.entities[id_ptr] = self.entities[last];
+            self.content[target_pos] = self.content[last_pos];  
+            self.entities[target_pos] = self.entities[last_pos];
             // swap content pointers in map
-            self.map[id] = self.map[last];
-            self.map[last] = id_ptr;
+            self.map[target] = self.map[last_pos];
+            self.map[last_pos] = target_pos;
 
-            self.free.push(id);
+            self.free.push(target);
         }
         // decrement size             
         self.len -= 1;                                      
@@ -121,11 +93,11 @@ impl<T: Default + Copy> Swarm<T> {
         &self.content[self.map[*id]] 
     }
 
-    pub fn add_component(&mut self, id: &Spawn, component: u8) {
+    pub fn add_component(&mut self, id: &Spawn, component: Component) {
         self.entities[self.map[*id]].add_component(component);
     }
 
-    pub fn remove_component(&mut self, id: &Spawn, component: u8) {
+    pub fn remove_component(&mut self, id: &Spawn, component: Component) {
         self.entities[self.map[*id]].remove_component(component);
     }
 
