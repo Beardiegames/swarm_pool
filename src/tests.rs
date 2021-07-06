@@ -3,7 +3,7 @@
 use crate::*;
 use crate as swarm;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Minion {
     name: String,
     value: u128,
@@ -22,13 +22,14 @@ fn main() {
 
 #[test]
 fn creating_a_swarm() {
-    let swarm = heap::Swarm::<Minion>::new(10);
+    let pool = Pool::new_heap(10);
+    let swarm = Swarm::<Minion>::new(pool);
     assert!(swarm.max_size() == 10);
 }
 
 #[test]
 fn spawning_new_swarm_instances() {
-    let mut swarm = heap::Swarm::<Minion>::new(10);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
     let spawn = swarm.spawn();
     assert!(spawn.is_ok());
     assert_eq!(swarm.count(), 1);
@@ -36,7 +37,7 @@ fn spawning_new_swarm_instances() {
 
 #[test]
 fn referencing_spawn_instance_bodies() {
-    let mut swarm = heap::Swarm::<Minion>::new(10);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
     let spawn = swarm.spawn().unwrap();
     
     swarm.get_mut(&spawn).value = 42;
@@ -45,7 +46,7 @@ fn referencing_spawn_instance_bodies() {
 
 #[test]
 fn looping_through_spawned_instances() {
-    let mut swarm = heap::Swarm::<Minion>::new(10);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
     let spawn1 = swarm.spawn().unwrap();
     let spawn2 = swarm.spawn().unwrap();
     
@@ -62,7 +63,7 @@ fn looping_through_spawned_instances() {
 
 #[test]
 fn destroying_spawned_instances() {
-    let mut swarm = heap::Swarm::<Minion>::new(10);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
     let spawn = swarm.spawn().unwrap();
     
     swarm.for_each(|obj| obj.value += 1);
@@ -87,7 +88,7 @@ fn destroying_spawned_instances() {
 
  #[test]
 fn cross_referencing_spawns_in_update_loop() {
-    let mut swarm = heap::Swarm::<Minion>::new(10);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
     let john = &swarm.spawn().unwrap();
     let cristy = &swarm.spawn().unwrap();
 
@@ -99,7 +100,7 @@ fn cross_referencing_spawns_in_update_loop() {
         cristy_body.name = String::from("Cristy");
         cristy_body.knows = *john;
 
-    swarm::heap::update(&mut swarm, |target, ctl| {
+    swarm::update(&mut swarm, |target, ctl| {
         let name: &str = &ctl.get_ref(target).name.clone();
         let knows: &Spawn = &ctl.get_ref(target).knows.clone();
 

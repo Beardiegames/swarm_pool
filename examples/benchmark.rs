@@ -31,36 +31,36 @@ fn main() {
     let mut run_id: usize = 0;
 
     let (vec_bn1, for_h_bn1, upd_h_bn1, for_s_bn1, upd_s_bn1) = bench_with_objects(&mut run_id);
-    let (vec_bn2, for_h_bn2, upd_h_bn2, for_s_bn2, upd_s_bn2) = bench_with_objects(&mut run_id);
-    let (vec_bn3, for_h_bn3, upd_h_bn3, for_s_bn3, upd_s_bn3) = bench_with_objects(&mut run_id);
-    let (vec_bn4, for_h_bn4, upd_h_bn4, for_s_bn4, upd_s_bn4) = bench_with_objects(&mut run_id);
-    let (vec_bn5, for_h_bn5, upd_h_bn5, for_s_bn5, upd_s_bn5) = bench_with_objects(&mut run_id);
+    // let (vec_bn2, for_h_bn2, upd_h_bn2, for_s_bn2, upd_s_bn2) = bench_with_objects(&mut run_id);
+    // let (vec_bn3, for_h_bn3, upd_h_bn3, for_s_bn3, upd_s_bn3) = bench_with_objects(&mut run_id);
+    // let (vec_bn4, for_h_bn4, upd_h_bn4, for_s_bn4, upd_s_bn4) = bench_with_objects(&mut run_id);
+    // let (vec_bn5, for_h_bn5, upd_h_bn5, for_s_bn5, upd_s_bn5) = bench_with_objects(&mut run_id);
 
-    let bvec = vec_bn1
-        .merge(vec_bn2)
-        .merge(vec_bn3)
-        .merge(vec_bn4)
-        .merge(vec_bn5);
-    let bforh = for_h_bn1
-        .merge(for_h_bn2)
-        .merge(for_h_bn3)
-        .merge(for_h_bn4)
-        .merge(for_h_bn5);
-    let bupdh = upd_h_bn1
-        .merge(upd_h_bn2)
-        .merge(upd_h_bn3)
-        .merge(upd_h_bn4)
-        .merge(upd_h_bn5);
-    let bfors = for_s_bn1
-        .merge(for_s_bn2)
-        .merge(for_s_bn3)
-        .merge(for_s_bn4)
-        .merge(for_s_bn5);
-    let bupds = upd_s_bn1
-        .merge(upd_s_bn2)
-        .merge(upd_s_bn3)
-        .merge(upd_s_bn4)
-        .merge(upd_s_bn5);
+    let bvec = vec_bn1;
+        //.merge(vec_bn2)
+        //.merge(vec_bn3)
+        //.merge(vec_bn4)
+        //.merge(vec_bn5);
+    let bforh = for_h_bn1;
+        //.merge(for_h_bn2)
+        //.merge(for_h_bn3)
+        //.merge(for_h_bn4)
+        //.merge(for_h_bn5);
+    let bupdh = upd_h_bn1;
+        //.merge(upd_h_bn2)
+        //.merge(upd_h_bn3)
+        //.merge(upd_h_bn4)
+        //.merge(upd_h_bn5);
+    let bfors = for_s_bn1;
+        //.merge(for_s_bn2)
+        //.merge(for_s_bn3)
+        //.merge(for_s_bn4)
+        //.merge(for_s_bn5);
+    let bupds = upd_s_bn1;
+        //.merge(upd_s_bn2)
+        //.merge(upd_s_bn3)
+        //.merge(upd_s_bn4)
+        //.merge(upd_s_bn5);
 
     println!("# RESULTS TOTAL:");
 
@@ -130,17 +130,17 @@ fn bench_with_objects(run_id: &mut usize) -> (Bench, Bench, Bench, Bench, Bench)
     let (v_spd2, fh_spd2, uh_spd2, fs_spd2, us_spd2) = bench_with(run_id, 10);
     let (v_spd3, fh_spd3, uh_spd3, fs_spd3, us_spd3) = bench_with(run_id, 100);
     let (v_spd4, fh_spd4, uh_spd4, fs_spd4, us_spd4) = bench_with(run_id, 1_000);
-    let (v_spd5, fh_spd5, uh_spd5, fs_spd5, us_spd5) = bench_with(run_id, 10_000);
-    let (v_spd6, fh_spd6, uh_spd6, fs_spd6, us_spd6) = bench_with(run_id, 100_000);
-    let (v_spd7, fh_spd7, uh_spd7, fs_spd7, us_spd7) = bench_with(run_id, 1_000_000);
+    //let (v_spd5, fh_spd5, uh_spd5, fs_spd5, us_spd5) = bench_with(run_id, 10_000);
+    //let (v_spd6, fh_spd6, uh_spd6, fs_spd6, us_spd6) = bench_with(run_id, 100_000);
+    //let (v_spd7, fh_spd7, uh_spd7, fs_spd7, us_spd7) = bench_with(run_id, 1_000_000);
 
     println!("--");
     (   
-        Bench (vec![v_spd1, v_spd2, v_spd3, v_spd4, v_spd5, v_spd6, v_spd7]),
-        Bench (vec![fh_spd1, fh_spd2, fh_spd3, fh_spd4, fh_spd5, fh_spd6, fh_spd7]),
-        Bench (vec![uh_spd1, uh_spd2, uh_spd3, uh_spd4, uh_spd5, uh_spd6, uh_spd7]),
-        Bench (vec![fs_spd1, fs_spd2, fs_spd3, fs_spd4, fs_spd5, fs_spd6, fs_spd7]),
-        Bench (vec![us_spd1, us_spd2, us_spd3, us_spd4, us_spd5, us_spd6, us_spd7]),
+        Bench (vec![v_spd1, v_spd2, v_spd3, v_spd4]),//, v_spd5, v_spd6, v_spd7]),
+        Bench (vec![fh_spd1, fh_spd2, fh_spd3, fh_spd4]),//, fh_spd5, fh_spd6, fh_spd7]),
+        Bench (vec![uh_spd1, uh_spd2, uh_spd3, uh_spd4]),//, uh_spd5, uh_spd6, uh_spd7]),
+        Bench (vec![fs_spd1, fs_spd2, fs_spd3, fs_spd4]),//, fs_spd5, fs_spd6, fs_spd7]),
+        Bench (vec![us_spd1, us_spd2, us_spd3, us_spd4]),//, us_spd5, us_spd6, us_spd7]),
     )
 }
 
@@ -150,25 +150,25 @@ fn bench_with(run_id: &mut usize, objects: usize) -> ((usize, f64), (usize, f64)
     std::thread::sleep(std::time::Duration::from_millis(500));
     
     let vec_spd = vec_heap_bencher(run_id, objects);
-    println!("> '{}M' call/s", vec_spd.1.round());
+    println!(" ..result was => '{}M' call/s", vec_spd.1.round());
 
     let for_h_spd = for_heap_bencher(run_id, objects);
-    println!("> '{}M' call/s ({}%)", 
+    println!(" ..result was => '{}M' call/s ({}%)", 
         for_h_spd.1.round(),
         fn_avg(for_h_spd.1, vec_spd.1)
     );
     let upd_h_spd = update_heap_bencher(run_id, objects);
-    println!("> '{}M' call/s ({}%)", 
+    println!(" ..result was => '{}M' call/s ({}%)", 
         upd_h_spd.1.round(), 
         fn_avg(upd_h_spd.1, vec_spd.1)
     ); 
     let for_s_spd = for_stack_bencher(run_id, objects);
-    println!("> '{}M' call/s ({}%)", 
+    println!(" ..result was => '{}M' call/s ({}%)", 
         for_s_spd.1.round(),
         fn_avg(for_s_spd.1, vec_spd.1)
     );
     let upd_s_spd = update_stack_bencher(run_id, objects);
-    println!("> '{}M' call/s ({}%)", 
+    println!(" ..result was => '{}M' call/s ({}%)", 
         upd_s_spd.1.round(), 
         fn_avg(upd_s_spd.1, vec_spd.1)
     ); 
@@ -206,35 +206,35 @@ pub fn cmp(a:&f64, b:&f64) -> Ordering {
 
 fn vec_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
-    print!("{}: Running Standard Vec bench for {} objects",id, amount);
+    println!("{}: Running Standard Vec bench for {} objects",id, amount);
     // get 'standard vector' thread speed
     let mut vec_test = vec![Minion::default(); amount];
+
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000 { 
+    for _j in 0..1_000_000_000/amount { 
         for k in 0..amount {
             vec_test[k].add_one();
         }
     }
     let elapsed_vec = now.elapsed();
+
     // base test results
-    let time = (elapsed_vec.unwrap().as_nanos() as f64) * 0.001;
-    let speed =  (vec_test[0].times_summoned * amount as u128) as f64 / time;
-    // test / output
-    assert_eq!(vec_test[0].times_summoned, 1_000);
-    //println!("   - bench vec: speed was {}M calls/s", speed.round());
+    let time = elapsed_vec.unwrap().as_secs_f64();
+    let speed = (vec_test[0].times_summoned * amount as u128) as f64 / time;
+
     // return result
     (id.clone(), speed)
 }
 
 fn for_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
-    print!("{}: Running Heap Swarm foreach bench for {} objects", id, amount);
+    println!("{}: Running Heap Swarm foreach bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = swarm::heap::Swarm::<Minion>::new(amount);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(amount));
     for _e in 0..amount { swarm.spawn(); }
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000 { 
+    for _j in 0..1_000_000_000/amount { 
         swarm.for_each(|obj| {
             obj.times_summoned += 1;
         });
@@ -242,54 +242,33 @@ fn for_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     let elapsed_res = now.elapsed();
 
     // swarm test results
-    let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
-    let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
-
-    assert_eq!(swarm.get_mut(&0).times_summoned, 1_000);
-    if amount > 1 {
-        assert_eq!(swarm.get_mut(&1).times_summoned, 1_000);
-    } else if amount > 3 {
-        assert_eq!(swarm.get_mut(&(amount-2)).times_summoned, 1_000);
-        assert_eq!(swarm.get_mut(&(amount-1)).times_summoned, 1_000);
-    }
+    let swarm_time = elapsed_res.unwrap().as_secs_f64();
+    let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / 10.0;
 
     (id.clone(), swarm_speed)
 }
 
 fn update_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
-    print!("{}: Running Heap Swarm Update bench for {} objects", id, amount);
+    println!("{}: Running Heap Swarm Update bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = heap::Swarm::<Minion>::new(amount);
+    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(amount));
     for _e in 0..amount { 
         let spawn = swarm.spawn().unwrap();
         swarm.get_mut(&spawn).summon = Some(Summoning::default());
     }
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000 { 
-        // swarm.for_each(|obj| {
-        //     if let Some(summon) = &mut obj.summon {
-        //         summon.times_summoned += 1;
-        //     }
-        // });
-        swarm::heap::update(&mut swarm, |spawn, swarm| {
+    for _j in 0..1_000_000_000/amount { 
+        swarm::update(&mut swarm, |spawn, swarm| {
             swarm.get_mut(spawn).times_summoned += 1;
         });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
-    let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
+    let swarm_time = elapsed_res.unwrap().as_secs_f64();
     let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
-    
-    assert_eq!(swarm.get_mut(&0).times_summoned, 1_000);
-    if amount > 1 {
-        assert_eq!(swarm.get_mut(&1).times_summoned, 1_000);
-    } else if amount > 3 {
-        assert_eq!(swarm.get_mut(&(amount-2)).times_summoned, 1_000);
-        assert_eq!(swarm.get_mut(&(amount-1)).times_summoned, 1_000);
-    }
 
     (id.clone(), swarm_speed)
 }
@@ -298,46 +277,34 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
 
 fn for_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
-    print!("{}: Running Stack Swarm foreach bench for {} objects", id, amount);
+    println!("{}: Running Stack Swarm foreach bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = stack::Swarm::<Minion>::new();
+    let mut swarm = Swarm::<Minion>::new(Pool::new_stack(StackSize::Stack1024));
     let spawns = match amount { a if a <= 1_000 => a, _ => 1_000, };
-    let multiplier = (amount as f64 / 1_000.0).ceil() as u128;
 
     for _e in 0..spawns { swarm.spawn(); }
 
     let now = std::time::SystemTime::now();
-    for _i in 0..multiplier {
-        for _j in 0..1_000 { 
-            swarm.for_each(|obj| {
-                obj.times_summoned += 1;
-            });
-        }
+    for _j in 0..1_000_000_000/amount { 
+        swarm.for_each(|obj| {
+            obj.times_summoned += 1;
+        });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
-    let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
+    let swarm_time = elapsed_res.unwrap().as_secs_f64();
     let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
-
-    assert_eq!(swarm.get_mut(&0).times_summoned, 1_000 * multiplier);
-    if amount > 1 {
-        assert_eq!(swarm.get_mut(&1).times_summoned, 1_000 * multiplier);
-    } else if amount > 3 {
-        assert_eq!(swarm.get_mut(&(amount-2)).times_summoned, 1_000 * multiplier);
-        assert_eq!(swarm.get_mut(&(amount-1)).times_summoned, 1_000 * multiplier);
-    }
 
     (id.clone(), swarm_speed)
 }
 
 fn update_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
-    print!("{}: Running Stack Swarm Update bench for {} objects", id, amount);
+    println!("{}: Running Stack Swarm Update bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = stack::Swarm::<Minion>::new();
-    let spawns = match amount { a if a <= 1_000 => a, _ => 1_000, };
-    let multiplier = (amount as f64 / 1_000.0).ceil() as u128;
+    let mut swarm = Swarm::<Minion>::new(Pool::new_stack(StackSize::Stack1024));
+    let spawns = match amount { a if a <= a => a, _ => 1_000, };
 
     for _e in 0..spawns { 
         let spawn = swarm.spawn().unwrap();
@@ -345,31 +312,16 @@ fn update_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     }
 
     let now = std::time::SystemTime::now();
-    for _i in 0..multiplier {
-        for _j in 0..1_000 { 
-            // swarm.for_each(|obj| {
-            //     if let Some(summon) = &mut obj.summon {
-            //         summon.times_summoned += 1;
-            //     }
-            // });
-            stack::update(&mut swarm, |spawn, swarm| {
-                swarm.get_mut(spawn).times_summoned += 1;
-            });
-        }
+    for _i in 0..1_000_000_000/amount {
+        swarm::update(&mut swarm, |spawn, swarm| {
+            swarm.get_mut(spawn).times_summoned += 1;
+        });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
-    let swarm_time = (elapsed_res.unwrap().as_nanos() as f64) * 0.001;
-    let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
-    
-    assert_eq!(swarm.get_mut(&0).times_summoned, 1_000 * multiplier);
-    if amount > 1 {
-        assert_eq!(swarm.get_mut(&1).times_summoned, 1_000 * multiplier);
-    } else if amount > 3 {
-        assert_eq!(swarm.get_mut(&(amount-2)).times_summoned, 1_000 * multiplier);
-        assert_eq!(swarm.get_mut(&(amount-1)).times_summoned, 1_000 * multiplier);
-    }
+    let swarm_time = elapsed_res.unwrap().as_secs_f64();
+    let swarm_speed = (swarm.get_mut(&0).times_summoned * spawns as u128) as f64 / swarm_time;
 
     (id.clone(), swarm_speed)
 }
