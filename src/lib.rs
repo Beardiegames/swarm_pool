@@ -1,32 +1,12 @@
 #[allow(dead_code)]
 mod tests;
 pub mod error;
-// pub mod heap;
-// pub mod stack;
 
 use std::iter::FromIterator;
-use std::iter::Iterator;
-use std::slice::IterMut;
-use std::convert::TryInto;
-use std::fmt::Debug;
 
 type Pointer = usize;
 pub type Spawn = usize;
 
-
-// pub fn update<T>(swarm: &mut Swarm<T>, handler: fn(&Spawn, &mut Swarm<T>)) 
-// where   T: Default + Clone + Debug
-// {
-//     swarm.control.is_updateing = true;
-//     for i in 0..swarm.len.clone() {
-//         handler(&i, swarm);
-//     }
-
-//     swarm.control.is_updateing = false;
-//     for i in 0..swarm.dkill_amount {
-//         swarm.kill(swarm.delayed_kills[i]);
-//     }
-// }
 
 pub enum PoolSize {
     Stack(StackSize),
@@ -40,100 +20,6 @@ pub enum StackSize {
     Stack512 = 512,
     Stack1024 = 1024,
 }
-
-// pub enum Pool<T: Default + Clone + Debug> {
-//     Stack64([T; 64]),
-//     Stack128([T; 128]),
-//     Stack256([T; 256]),
-//     Stack512([T; 512]),
-//     Stack1024([T; 1024]),
-
-//     Heap(Box<[T]>),
-// }
-
-// impl<T: Default + Clone + Debug> Pool<T> {
-
-//     pub fn new_heap(size: usize) -> Self {
-//         Self::Heap(Box::from_iter(
-//             vec![T::default(); size].into_iter()
-//         ))
-//     }
-
-//     pub fn new_stack(size: StackSize) -> Self {
-//         match size {
-//             StackSize::Stack64 => Self::Stack64(vec![T::default(); 64]
-//                 .try_into()
-//                 .expect("Failed to create swarm due to spawn type!")),
-//             StackSize::Stack128 => Self::Stack128(vec![T::default(); 128]
-//                 .try_into()
-//                 .expect("Failed to create swarm due to spawn type!")),
-//             StackSize::Stack256 => Self::Stack256(vec![T::default(); 256]
-//                 .try_into()
-//                 .expect("Failed to create swarm due to spawn type!")),
-//             StackSize::Stack512 => Self::Stack512(vec![T::default(); 512]
-//                 .try_into()
-//                 .expect("Failed to create swarm due to spawn type!")),
-//             StackSize::Stack1024 => Self::Stack1024(vec![T::default(); 1024]
-//                 .try_into()
-//                 .expect("Failed to create swarm due to spawn type!")),
-//         }
-//     }
-
-//     pub fn size(&self) -> usize {
-//         match self {
-//             Self::Stack64(pool) => 64,
-//             Self::Stack128(pool) => 128,
-//             Self::Stack256(pool) => 256,
-//             Self::Stack512(pool) => 512,
-//             Self::Stack1024(pool) => 1024,
-//             Self::Heap(pool) => pool.len(),
-//         }
-//     }
-
-//     pub fn copy(&mut self, from_index: &usize, to_index: &usize) {
-//         match self {
-//             Self::Stack64(pool) => pool[*to_index] = pool[*from_index].clone(),
-//             Self::Stack128(pool) => pool[*to_index] = pool[*from_index].clone(),
-//             Self::Stack256(pool) => pool[*to_index] = pool[*from_index].clone(),
-//             Self::Stack512(pool) => pool[*to_index] = pool[*from_index].clone(),
-//             Self::Stack1024(pool) => pool[*to_index] = pool[*from_index].clone(),
-//             Self::Heap(pool) => pool[*to_index] = pool[*from_index].clone(),
-//         }
-//     }
-
-//     pub fn for_each(&mut self, handler: fn(&mut T), count: &usize) {
-//         match self {
-//             Self::Stack64(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//             Self::Stack128(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//             Self::Stack256(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//             Self::Stack512(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//             Self::Stack1024(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//             Self::Heap(pool) => for i in 0..*count { handler(&mut pool[i]) },
-//         }
-//     }
-
-//     pub fn get_mut(&mut self, at_index: &usize) -> &mut T {
-//         match self {
-//             Self::Stack64(pool) => &mut pool[*at_index],
-//             Self::Stack128(pool) => &mut pool[*at_index],
-//             Self::Stack256(pool) => &mut pool[*at_index],
-//             Self::Stack512(pool) => &mut pool[*at_index],
-//             Self::Stack1024(pool) => &mut pool[*at_index],
-//             Self::Heap(pool) => &mut pool[*at_index],
-//         }
-//     }
-
-//     pub fn get_ref(&self, at_index: &usize) -> &T {
-//         match self {
-//             Self::Stack64(pool) => &pool[*at_index],
-//             Self::Stack128(pool) => &pool[*at_index],
-//             Self::Stack256(pool) => &pool[*at_index],
-//             Self::Stack512(pool) => &pool[*at_index],
-//             Self::Stack1024(pool) => &pool[*at_index],
-//             Self::Heap(pool) => &pool[*at_index],
-//         }
-//     }
-// }
 
 pub struct SwarmControl {
     map: Box<[Pointer]>,
@@ -173,13 +59,16 @@ impl SwarmControl {
         }
 
         if self.len > 1 {
-            let last_pos = self.len - 2;
-            let target_pos = self.map[target];
+            let last_ptr = self.len - 2;
+            let target_ptr = self.map[target];
+
             // swap content to back
-                // self.pool[target_pos] = self.pool[last_pos].clone(); 
+            // self.pool[target_ptr] = self.pool[last_ptr].clone(); 
+            copy_handler(&last_ptr, &target_ptr);
+
             // swap content pointers in map
-            self.map[target] = self.map[last_pos];
-            self.map[last_pos] = target_pos;
+            self.map[target] = last_ptr;
+            self.map[last_ptr] = target_ptr;
 
             self.free.push(target);
         }
@@ -228,21 +117,6 @@ impl SwarmControl {
 }
 
 
-// pub trait Swarm<T: Default + Copy> {
-//     fn spawn(&mut self) -> Result<Spawn, error::SwarmError>;
-//     fn kill(&mut self, target: Spawn) -> Result<(), error::SwarmError>;
-//     fn delayed_kill(&mut self, spawn: Spawn);
-    
-//     fn is_active(&self, id: &Spawn) -> bool;
-//     fn get_mut(&mut self, id: &Spawn) -> &mut T;
-//     fn get_ref(&self, id: &Spawn) -> &T;
-//     fn count(&self) -> usize;
-//     fn max_size(&self) -> usize;
-
-//     fn for_each(&mut self, handler: fn(&mut T));
-//     fn update(&mut self, handler: fn(&Spawn, &mut Self));
-// }
-
 pub struct StackSwarm<T: Default + Copy> {
     pool: [T; 1024],
     control: SwarmControl,
@@ -257,9 +131,7 @@ impl<T: Default + Copy> StackSwarm<T> {
         }
     }
 
-//}
-
-// impl<T: Default + Copy> Swarm<T> for StackSwarm<T> {
+    // ooling
 
     pub fn spawn(&mut self) -> Result<Spawn, error::SwarmError> {
         self.control.spawn()
@@ -274,6 +146,7 @@ impl<T: Default + Copy> StackSwarm<T> {
         self.control.delayed_kill(spawn);
     }
 
+    // states
     
     pub fn is_active(&self, id: &Spawn) -> bool {
         self.control.is_active(id)
@@ -290,22 +163,48 @@ impl<T: Default + Copy> StackSwarm<T> {
     pub fn count(&self) -> usize { self.control.len }
     pub fn max_size(&self) -> usize { self.control.max }
 
+    // updaters
+
     pub fn for_each(&mut self, handler: fn(&mut T)) {
-        for i in 0..self.control.len {
+        let len = self.control.len;
+        let mut i = 0;
+
+        while i < len {
             handler(&mut self.pool[i]);
+            i += 1;
         }
     }
 
-    pub fn update(&mut self, handler: fn(&Spawn, &mut Self)) {
+    pub fn update(&mut self, handler: fn(&Pointer, &mut [T; 1024])) {
+        let len = self.control.len;
+        let mut i = 0;
+
+        while i < len {
+            handler(&i, &mut self.pool);
+            i += 1;
+        }
+    }
+
+    pub fn update_ctl(&mut self, handler: fn(&Spawn, &mut Self)) {
         self.control.is_updateing = true;
-        for i in 0..self.control.len {
+
+        let len1 = self.control.len;
+        let len2 = self.control.dkill_amount;
+        let mut i = 0;
+
+        while i < len1 {
             handler(&i, self);
+            i += 1;
         }
 
         self.control.is_updateing = false;
-        for i in 0..self.control.dkill_amount {
+
+        i = 0;
+        while i < len2 {
             self.kill(self.control.delayed_kills[i]);
+            i += 1;
         }
+
         self.control.dkill_amount = 0;
     }
 }
@@ -324,9 +223,7 @@ impl<T: Default + Copy> HeapSwarm<T> {
         }
     }
 
-// }
-
-// impl<T: Default + Copy> Swarm<T> for HeapSwarm<T> {
+    // pooling
 
     pub fn spawn(&mut self) -> Result<Spawn, error::SwarmError> {
         self.control.spawn()
@@ -341,6 +238,7 @@ impl<T: Default + Copy> HeapSwarm<T> {
         self.control.delayed_kill(spawn);
     }
 
+    // states
     
     pub fn is_active(&self, id: &Spawn) -> bool {
         self.control.is_active(id)
@@ -357,22 +255,49 @@ impl<T: Default + Copy> HeapSwarm<T> {
     pub fn count(&self) -> usize { self.control.len }
     pub fn max_size(&self) -> usize { self.control.max }
 
+    // updaters
+
     pub fn for_each(&mut self, handler: fn(&mut T)) {
-        for i in 0..self.control.len {
+        let len = self.control.len;
+        let mut i = 0;
+
+        while i < len {
             handler(&mut self.pool[i]);
+            i += 1;
         }
     }
 
-    pub fn update(&mut self, handler: fn(&Spawn, &mut Self)) {
+    pub fn update(&mut self, handler: fn(&Pointer, &mut Vec<T>)) {
+        let len = self.control.len;
+        let mut i = 0;
+
+        while i < len {
+            handler(&i, &mut self.pool);
+            i += 1;
+        }
+    }
+
+    pub fn update_ctl(&mut self, handler: fn(&Spawn, &mut Self)) {
+        
         self.control.is_updateing = true;
-        for i in 0..self.control.len {
+
+        let len1 = self.control.len;
+        let len2 = self.control.dkill_amount;
+        let mut i = 0;
+
+        while i < len1 {
             handler(&i, self);
+            i += 1;
         }
 
         self.control.is_updateing = false;
-        for i in 0..self.control.dkill_amount {
+
+        i = 0;
+        while i < len2 {
             self.kill(self.control.delayed_kills[i]);
+            i += 1;
         }
+        
         self.control.dkill_amount = 0;
     }
 }

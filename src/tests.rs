@@ -106,7 +106,7 @@ fn cross_referencing_spawns_in_update_loop() {
         cristy_body.name = byte_name("Cristy");
         cristy_body.knows = *john;
 
-    swarm.update(|trg, swm| {
+    swarm.update_ctl(|trg, swm| {
         let name = swm.get_ref(trg).name;
         let knows = swm.get_ref(trg).knows;
 
