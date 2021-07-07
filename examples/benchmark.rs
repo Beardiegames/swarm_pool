@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 use swarm::*;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Summoning {
     times_summoned: u128,
 }
@@ -14,7 +14,7 @@ impl Summoning {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Minion {
     times_summoned: u128,
     summon: Option<Summoning>,
@@ -25,6 +25,8 @@ impl Minion {
         self.times_summoned += 1;
     }
 }
+
+const NUM_SAMPLES: usize = 1_000_000_000;
 
 
 fn main() {
@@ -65,14 +67,14 @@ fn main() {
     println!("# RESULTS TOTAL:");
 
     println!("Plain vec results:");
-    println!(" - average of '{}M' calls/s", bvec.avg().round());
+    println!(" - average of '{}M' calls/s", (bvec.avg() / 1_000_000.0).round());
 
     let vmin = bvec.min();
     println!(" - lowest of '{}M' calls/s -> bench #{}", 
-        vmin.1.round(), vmin.0);
+        (vmin.1 / 1_000_000.0).round(), vmin.0);
     let vmax = bvec.max();
     println!(" - highest of '{}M' calls/s -> becnh #{}", 
-        vmax.1.round(), vmax.0);
+        (vmax.1 / 1_000_000.0).round(), vmax.0);
     
     println!("Swarm 'heap' foreach results:");
     println!(" - average of '{}M' calls/s", bforh.avg().round());
@@ -81,10 +83,10 @@ fn main() {
 
     let vmin = bforh.min();
     println!(" - lowest of '{}M' calls/s -> bench #{}", 
-        vmin.1.round(), vmin.0);
+        (vmin.1 / 1_000_000.0).round(), vmin.0);
     let vmax = bforh.max();
     println!(" - highest of '{}M' calls/s -> bench #{}", 
-        vmax.1.round(), vmax.0);
+        (vmax.1 / 1_000_000.0).round(), vmax.0);
     
     println!("Swarm 'heap' update results:");
     println!(" - average of '{}M' calls/s", bupdh.avg().round());
@@ -93,10 +95,10 @@ fn main() {
 
     let vmin = bupdh.min();
     println!(" - lowest of '{}M' calls/s -> becnh #{}", 
-        vmin.1.round(), vmin.0);
+        (vmin.1 / 1_000_000.0).round(), vmin.0);
     let vmax = bupdh.max();
     println!(" - highest of '{}M' calls/s -> becnh #{}", 
-        vmax.1.round(), vmax.0);
+        (vmax.1 / 1_000_000.0).round(), vmax.0);
     
     println!("Swarm 'stack' foreach results:");
     println!(" - average of '{}M' calls/s", bfors.avg().round());
@@ -105,10 +107,10 @@ fn main() {
 
     let vmin = bfors.min();
     println!(" - lowest of '{}M' calls/s -> bench #{}", 
-        vmin.1.round(), vmin.0);
+        (vmin.1 / 1_000_000.0).round(), vmin.0);
     let vmax = bfors.max();
     println!(" - highest of '{}M' calls/s -> bench #{}", 
-        vmax.1.round(), vmax.0);
+        (vmax.1 / 1_000_000.0).round(), vmax.0);
     
     println!("Swarm 'stack' update results:");
     println!(" - average of '{}M' calls/s", bupds.avg().round());
@@ -117,10 +119,10 @@ fn main() {
 
     let vmin = bupds.min();
     println!(" - lowest of '{}M' calls/s -> becnh #{}", 
-        vmin.1.round(), vmin.0);
+        (vmin.1 / 1_000_000.0).round(), vmin.0);
     let vmax = bupds.max();
     println!(" - highest of '{}M' calls/s -> becnh #{}", 
-        vmax.1.round(), vmax.0);
+        (vmax.1 / 1_000_000.0).round(), vmax.0);
 
 }
 
@@ -150,26 +152,26 @@ fn bench_with(run_id: &mut usize, objects: usize) -> ((usize, f64), (usize, f64)
     std::thread::sleep(std::time::Duration::from_millis(500));
     
     let vec_spd = vec_heap_bencher(run_id, objects);
-    println!(" ..result was => '{}M' call/s", vec_spd.1.round());
+    println!(" ..result was => '{}M' call/s", (vec_spd.1 / 1_000_000.0).round());
 
     let for_h_spd = for_heap_bencher(run_id, objects);
     println!(" ..result was => '{}M' call/s ({}%)", 
-        for_h_spd.1.round(),
+        (for_h_spd.1 / 1_000_000.0).round(),
         fn_avg(for_h_spd.1, vec_spd.1)
     );
     let upd_h_spd = update_heap_bencher(run_id, objects);
     println!(" ..result was => '{}M' call/s ({}%)", 
-        upd_h_spd.1.round(), 
+        (upd_h_spd.1 / 1_000_000.0).round(), 
         fn_avg(upd_h_spd.1, vec_spd.1)
     ); 
     let for_s_spd = for_stack_bencher(run_id, objects);
     println!(" ..result was => '{}M' call/s ({}%)", 
-        for_s_spd.1.round(),
+        (for_s_spd.1 / 1_000_000.0).round(),
         fn_avg(for_s_spd.1, vec_spd.1)
     );
     let upd_s_spd = update_stack_bencher(run_id, objects);
     println!(" ..result was => '{}M' call/s ({}%)", 
-        upd_s_spd.1.round(), 
+        (upd_s_spd.1 / 1_000_000.0).round(), 
         fn_avg(upd_s_spd.1, vec_spd.1)
     ); 
 
@@ -211,9 +213,9 @@ fn vec_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     let mut vec_test = vec![Minion::default(); amount];
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000_000_000/amount { 
+    for _j in 0..NUM_SAMPLES/amount { 
         for k in 0..amount {
-            vec_test[k].add_one();
+            vec_test[k].times_summoned += 1;
         }
     }
     let elapsed_vec = now.elapsed();
@@ -230,11 +232,11 @@ fn for_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
     println!("{}: Running Heap Swarm foreach bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(amount));
+    let mut swarm = HeapSwarm::<Minion>::new(amount);
     for _e in 0..amount { swarm.spawn(); }
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000_000_000/amount { 
+    for _j in 0..NUM_SAMPLES/amount { 
         swarm.for_each(|obj| {
             obj.times_summoned += 1;
         });
@@ -243,7 +245,7 @@ fn for_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
 
     // swarm test results
     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-    let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / 10.0;
+    let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
 
     (id.clone(), swarm_speed)
 }
@@ -252,15 +254,15 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
     println!("{}: Running Heap Swarm Update bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(amount));
+    let mut swarm = HeapSwarm::<Minion>::new(amount);
     for _e in 0..amount { 
         let spawn = swarm.spawn().unwrap();
         swarm.get_mut(&spawn).summon = Some(Summoning::default());
     }
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000_000_000/amount { 
-        swarm::update(&mut swarm, |spawn, swarm| {
+    for _j in 0..NUM_SAMPLES/amount { 
+        swarm.update(|spawn, swarm| {
             swarm.get_mut(spawn).times_summoned += 1;
         });
     }
@@ -279,13 +281,13 @@ fn for_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
     println!("{}: Running Stack Swarm foreach bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion>::new(Pool::new_stack(StackSize::Stack1024));
+    let mut swarm = StackSwarm::<Minion>::new();
     let spawns = match amount { a if a <= 1_000 => a, _ => 1_000, };
 
     for _e in 0..spawns { swarm.spawn(); }
 
     let now = std::time::SystemTime::now();
-    for _j in 0..1_000_000_000/amount { 
+    for _j in 0..NUM_SAMPLES/amount { 
         swarm.for_each(|obj| {
             obj.times_summoned += 1;
         });
@@ -303,7 +305,7 @@ fn update_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     *id += 1;
     println!("{}: Running Stack Swarm Update bench for {} objects", id, amount);
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion>::new(Pool::new_stack(StackSize::Stack1024));
+    let mut swarm = StackSwarm::<Minion>::new();
     let spawns = match amount { a if a <= a => a, _ => 1_000, };
 
     for _e in 0..spawns { 
@@ -312,8 +314,8 @@ fn update_stack_bencher(id: &mut usize, amount: usize) -> (usize, f64) {
     }
 
     let now = std::time::SystemTime::now();
-    for _i in 0..1_000_000_000/amount {
-        swarm::update(&mut swarm, |spawn, swarm| {
+    for _i in 0..NUM_SAMPLES/amount {
+        swarm.update(|spawn, swarm| {
             swarm.get_mut(spawn).times_summoned += 1;
         });
     }

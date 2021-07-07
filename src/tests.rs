@@ -2,10 +2,12 @@
 
 use crate::*;
 use crate as swarm;
+use std::convert::TryInto;
 
-#[derive(Default, Clone, Debug)]
+
+#[derive(Default, Copy, Clone)]
 pub struct Minion {
-    name: String,
+    name: [u8; 8],
     value: u128,
     knows: crate::Spawn,
 }
@@ -16,20 +18,24 @@ impl Minion {
     }
 }
 
+fn byte_name(str: &str) -> [u8; 8] {
+    str.as_bytes().try_into().expect("Incorrect slice length!")
+}
+
+
 fn main() {
     
 }
 
 #[test]
 fn creating_a_swarm() {
-    let pool = Pool::new_heap(10);
-    let swarm = Swarm::<Minion>::new(pool);
+    let swarm = HeapSwarm::<Minion>::new(10);
     assert!(swarm.max_size() == 10);
 }
 
 #[test]
 fn spawning_new_swarm_instances() {
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
+    let mut swarm = HeapSwarm::<Minion>::new(10);
     let spawn = swarm.spawn();
     assert!(spawn.is_ok());
     assert_eq!(swarm.count(), 1);
@@ -37,7 +43,7 @@ fn spawning_new_swarm_instances() {
 
 #[test]
 fn referencing_spawn_instance_bodies() {
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
+    let mut swarm = HeapSwarm::<Minion>::new(10);
     let spawn = swarm.spawn().unwrap();
     
     swarm.get_mut(&spawn).value = 42;
@@ -46,7 +52,7 @@ fn referencing_spawn_instance_bodies() {
 
 #[test]
 fn looping_through_spawned_instances() {
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
+    let mut swarm = HeapSwarm::<Minion>::new(10);
     let spawn1 = swarm.spawn().unwrap();
     let spawn2 = swarm.spawn().unwrap();
     
@@ -63,7 +69,7 @@ fn looping_through_spawned_instances() {
 
 #[test]
 fn destroying_spawned_instances() {
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
+    let mut swarm = HeapSwarm::<Minion>::new(10);
     let spawn = swarm.spawn().unwrap();
     
     swarm.for_each(|obj| obj.value += 1);
@@ -88,28 +94,27 @@ fn destroying_spawned_instances() {
 
  #[test]
 fn cross_referencing_spawns_in_update_loop() {
-    let mut swarm = Swarm::<Minion>::new(Pool::new_heap(10));
+    let mut swarm = HeapSwarm::<Minion>::new(10);
     let john = &swarm.spawn().unwrap();
     let cristy = &swarm.spawn().unwrap();
 
     let john_body = swarm.get_mut(john);
-        john_body.name = String::from("John");
+        john_body.name = byte_name("John");
         john_body.knows = *cristy;
 
     let cristy_body = swarm.get_mut(cristy);
-        cristy_body.name = String::from("Cristy");
+        cristy_body.name = byte_name("Cristy");
         cristy_body.knows = *john;
 
-    swarm::update(&mut swarm, |target, ctl| {
-        let name: &str = &ctl.get_ref(target).name.clone();
-        let knows: &Spawn = &ctl.get_ref(target).knows.clone();
+    swarm.update(|trg, swm| {
+        let name = swm.get_ref(trg).name;
+        let knows = swm.get_ref(trg).knows;
 
-        ctl.get_mut(knows).value = match name {
-            "John" => 2, // john tells critsy to have a value of 2
-            "Cristy" => 1, // cristy tell john to have a value of 1
-            _ => 0,
-        }
-            
+        // john tells critsy to have a value of 2
+        if name == byte_name("John") { swm.get_mut(&knows).value = 2; }
+
+        // cristy tell john to have a value of 1
+        if name == byte_name("Cristy") { swm.get_mut(&knows).value = 1; }   
     });
 
     assert_eq!(swarm.get_ref(john).value, 1);
