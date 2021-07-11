@@ -3,8 +3,8 @@ use std::iter::FromIterator;
 use super::*;
 
 pub struct SwarmControl {
-    free: Vec<ObjectIndex>,
-    pub(crate) map: Box<[ObjectIndex]>,
+    free: Vec<Spawn>,
+    //pub(crate) map: Box<[ObjectIndex]>,
     pub(crate) len: usize,
     pub(crate) max: usize,
     pub(crate) is_updateing: bool,
@@ -16,8 +16,8 @@ impl SwarmControl {
 
     pub fn new(size: usize) -> Self {
         SwarmControl { 
-            map: Box::from_iter((0..size).into_iter()),
-            free: Vec::new(),
+            //map: Box::from_iter((0..size).into_iter()),
+            free: Vec::with_capacity(size),
             len: 0,
             max: size,
             is_updateing: false,
@@ -31,7 +31,7 @@ impl SwarmControl {
     // value of map[last pointer] is changed to id
     // len is shortened by one
 
-    pub fn kill<F>(&mut self, target: SpawnId, copy_handler: F) 
+    pub fn kill<F>(&mut self, target: &Spawn, copy_handler: F) 
         -> Result<(), error::SwarmError> 
     where F: FnOnce(&usize, &usize)
     {
@@ -41,17 +41,17 @@ impl SwarmControl {
 
         if self.len > 1 {
             let last_ptr = self.len - 2;
-            let target_ptr = self.map[target];
+            let target_ptr = target.0.borrow().pos; //self.map[target];
 
             // swap content to back
             // self.pool[target_ptr] = self.pool[last_ptr].clone(); 
             copy_handler(&last_ptr, &target_ptr);
 
             // swap content pointers in map
-            self.map[target] = last_ptr;
-            self.map[last_ptr] = target_ptr;
+            // self.map[target] = last_ptr;
+            // self.map[last_ptr] = target_ptr;
 
-            self.free.push(target);
+            self.free.push(target.mirror());
         }
         // decrement size             
         if self.len > 0 { 
@@ -75,13 +75,20 @@ impl SwarmControl {
         }
     }
 
-    pub fn spawn(&mut self) -> Option<(SpawnId, ObjectIndex)> {
+    pub fn spawn(&mut self) -> Option<Spawn> { //(SpawnId, ObjectIndex)> {
         if self.len < self.max {
             self.len += 1;
+            let pos = self.len-1;
+
             if self.free.len() > 0 {
-                self.free.pop().map(|id| (id, self.map[id])) // .ok_or(error::UNKNOWN)
+                self.free.pop().map(|s| { s.0.borrow_mut().pos = pos; s }) // .ok_or(error::UNKNOWN)
             } else {
-                let id = self.len-1;
+                
+                let tag = &self.tags[index];
+                    tag.0.borrow_mut().id = pos;
+                    tag.0.borrow_mut().pos = pos;
+                    tag.0.borrow_mut().active = true;
+
                 Some((id, self.map[id]))
             }
         } else {

@@ -6,12 +6,12 @@ use swarm::*;
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Summoning {
-    times_summoned: u128,
+    calls: u128,
 }
 
 impl Summoning {
     pub fn add_one(&mut self) {
-        self.times_summoned += 1;
+        self.calls += 1;
     }
 
 }
@@ -20,18 +20,18 @@ pub struct SwarmData;
 
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Minion {
-    times_summoned: u128,
+    calls: u128,
     summon: Option<Summoning>,
 }
 
 impl Minion {
     pub fn add_one(&mut self) {
-        self.times_summoned += 1;
+        self.calls += 1;
     }
 }
 
 
-const NUM_SAMPLES: usize = 5_000_000_000;
+const NUM_SAMPLES: u128 = 2_000_000_000;
 
 
 fn main() {
@@ -102,7 +102,7 @@ fn bench_with_objects(run_id: &mut usize) -> (Bench, Bench, Bench, Bench) {
 
 type Speed = (usize, f64);
 
-fn bench_with(run_id: &mut usize, objects: usize) -> (Speed, Speed, Speed, Speed) {
+fn bench_with(run_id: &mut usize, objects: u128) -> (Speed, Speed, Speed, Speed) {
     let fn_avg = |x: f64, vec: f64| (100.0 * x / vec).round();
 
     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -112,7 +112,7 @@ fn bench_with(run_id: &mut usize, objects: usize) -> (Speed, Speed, Speed, Speed
         let m_calls = (vec_spd.1 / 1_000_000.0).round();
         println!("{}M calls/s @ {}M upd/s", m_calls, m_calls / objects as f64);
     }
-    
+
     let for_h_spd = for_heap_bencher(run_id, objects);
     {
         let m_calls = (for_h_spd.1 / 1_000_000.0).round();
@@ -163,37 +163,38 @@ pub fn cmp(a:&f64, b:&f64) -> Ordering {
     if a < b { Ordering::Greater } else { Ordering::Less }
 }
 
-fn vec_heap_bencher(id: &mut usize, amount: usize) -> Speed {
+fn vec_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     *id += 1;
     print!("{}: Standard Vec bench for {} object(s).. ",id, amount);
     #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get 'standard vector' thread speed
-    let mut vec_test = vec![Minion::default(); amount];
+    let mut vec_test = vec![Minion::default(); amount as usize];
 
     let now = std::time::SystemTime::now();
     for _j in 0..NUM_SAMPLES/amount { 
-        for k in 0..amount {
-            vec_test[k].times_summoned += 1;
+        for k in 0..amount as usize {
+            vec_test[k].calls += 1;
         }
     }
     let elapsed_vec = now.elapsed();
 
     // base test results
     let time = elapsed_vec.unwrap().as_secs_f64();
-    let speed = (vec_test[0].times_summoned * amount as u128) as f64 / time;
+    let speed = (vec_test[0].calls * amount as u128) as f64 / time;
+    assert_eq!(vec_test[0].calls, NUM_SAMPLES / amount as u128);
 
     // return result
     (id.clone(), speed)
 }
 
-fn for_heap_bencher(id: &mut usize, amount: usize) -> Speed {
+fn for_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     *id += 1;
     print!("{}: Swarm.for_each() bench with {} object(s).. ", id, amount);
     #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion, _>::new(amount, ());
+    let mut swarm = Swarm::<Minion, _>::new(amount as usize, ());
     let s_first = swarm.spawn().unwrap();
     for _e in 1..amount { swarm.spawn(); }
 
@@ -201,26 +202,28 @@ fn for_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     let now = std::time::SystemTime::now();
     for _j in 0..NUM_SAMPLES/amount { 
         swarm.for_each(|obj| {
-            obj.times_summoned += 1;
+            obj.calls += 1;
         });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-    let swarm_speed = (swarm.get_mut(&s_first).times_summoned * amount as u128) as f64 / swarm_time;
+    let swarm_speed = (swarm.get_mut(&s_first).calls * amount as u128) as f64 / swarm_time;
+    assert_eq!(swarm.get_mut(&s_first).calls, NUM_SAMPLES / amount);
 
     (id.clone(), swarm_speed)
 }
 
-fn forall_heap_bencher(id: &mut usize, amount: usize) -> Speed {
+fn forall_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     *id += 1;
     print!("{}: Swarm.for_all() bench with {} object(s).. ", id, amount);
     #[allow(unused_must_use)] { std::io::stdout().flush(); }
     
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion, _>::new(amount, ());
+    let mut swarm = Swarm::<Minion, _>::new(amount as usize, ());
     let s_first = swarm.spawn().unwrap();
+
     for _e in 1..amount { 
         let spawn = swarm.spawn().unwrap();
         swarm.get_mut(&spawn).summon = Some(Summoning::default());
@@ -230,26 +233,28 @@ fn forall_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     let now = std::time::SystemTime::now();
     for _j in 0..NUM_SAMPLES/amount { 
         swarm.for_all(|index, list, _props| {
-            list[*index].times_summoned += 1;
+            list[*index].calls += 1;
         });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-    let swarm_speed = (swarm.get_mut(&s_first).times_summoned * amount as u128) as f64 / swarm_time;
+    let swarm_speed = (swarm.get_mut(&s_first).calls * amount as u128) as f64 / swarm_time;
+    assert_eq!(swarm.get_mut(&s_first).calls, NUM_SAMPLES / amount);
 
     (id.clone(), swarm_speed)
 }
 
-fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
+fn update_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     *id += 1;
     print!("{}: Swarm.update() bench with {} object(s).. ", id, amount);
     #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get swarm ecs system speed
-    let mut swarm = Swarm::<Minion, _>::new(amount, ());
+    let mut swarm = Swarm::<Minion, _>::new(amount as usize, ());
     let s_first = swarm.spawn().unwrap();
+
     for _e in 1..amount { 
         let spawn = swarm.spawn().unwrap();
         swarm.get_mut(&spawn).summon = Some(Summoning::default());
@@ -258,15 +263,16 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     // run bench loop
     let now = std::time::SystemTime::now();
     for _j in 0..NUM_SAMPLES/amount { 
-        swarm.update(|spawn, swarm| {
-            swarm.raw_mut(spawn).times_summoned += 1;
+        swarm::update(&mut swarm, |pos, s| {
+            s.get_raw(&pos).calls += 1;
         });
     }
     let elapsed_res = now.elapsed();
 
     // swarm test results
     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-    let swarm_speed = (swarm.get_mut(&s_first).times_summoned * amount as u128) as f64 / swarm_time;
+    let swarm_speed = (swarm.get_mut(&s_first).calls * amount as u128) as f64 / swarm_time;
+    assert_eq!(swarm.get_mut(&s_first).calls, NUM_SAMPLES / amount);
 
     (id.clone(), swarm_speed)
 }
@@ -285,14 +291,14 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 //     let now = std::time::SystemTime::now();
 //     for _j in 0..NUM_SAMPLES/amount { 
 //         swarm.for_each(|obj| {
-//             obj.times_summoned += 1;
+//             obj.calls += 1;
 //         });
 //     }
 //     let elapsed_res = now.elapsed();
 
 //     // swarm test results
 //     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-//     let swarm_speed = (swarm.get_mut(&0).times_summoned * amount as u128) as f64 / swarm_time;
+//     let swarm_speed = (swarm.get_mut(&0).calls * amount as u128) as f64 / swarm_time;
 
 //     (id.clone(), swarm_speed)
 // }
@@ -312,14 +318,14 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 //     let now = std::time::SystemTime::now();
 //     for _i in 0..NUM_SAMPLES/amount {
 //         swarm.update(|ptr, swarm| {
-//             swarm[*ptr].times_summoned += 1;
+//             swarm[*ptr].calls += 1;
 //         });
 //     }
 //     let elapsed_res = now.elapsed();
 
 //     // swarm test results
 //     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-//     let swarm_speed = (swarm.get_mut(&0).times_summoned * spawns as u128) as f64 / swarm_time;
+//     let swarm_speed = (swarm.get_mut(&0).calls * spawns as u128) as f64 / swarm_time;
 
 //     (id.clone(), swarm_speed)
 // }
@@ -339,14 +345,14 @@ fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 //     let now = std::time::SystemTime::now();
 //     for _i in 0..NUM_SAMPLES/amount {
 //         swarm.update_ctl(|spawn, swarm| {
-//             swarm.get_mut(spawn).times_summoned += 1;
+//             swarm.get_mut(spawn).calls += 1;
 //         });
 //     }
 //     let elapsed_res = now.elapsed();
 
 //     // swarm test results
 //     let swarm_time = elapsed_res.unwrap().as_secs_f64();
-//     let swarm_speed = (swarm.get_mut(&0).times_summoned * spawns as u128) as f64 / swarm_time;
+//     let swarm_speed = (swarm.get_mut(&0).calls * spawns as u128) as f64 / swarm_time;
 
 //     (id.clone(), swarm_speed)
 // }
