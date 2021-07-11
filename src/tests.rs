@@ -64,6 +64,34 @@ fn referencing_spawn_instance_bodies() {
     assert_eq!(swarm.get_ref(&spawn).value, 42);
 }
 
+#[test]
+fn using_spawn_reference_info() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    let spawn1 = swarm.spawn().unwrap();
+
+    assert_eq!(spawn1.id(), 0);
+    assert_eq!(spawn1.pos(), 0);
+    assert_eq!(spawn1.active(), true);
+}
+
+#[test]
+fn spawn_info_can_be_shared() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    let spawn1 = swarm.spawn().unwrap();
+    let spawn2 = spawn1.mirror();
+
+    assert_eq!(spawn1, spawn2);
+    assert_eq!(spawn1.active(), true);
+
+    {
+        let spawn3 = spawn2.mirror();
+        spawn3.0.borrow_mut().active = false;
+    } // spawn3 goes out of scope here!
+
+    assert_eq!(spawn1, spawn2);
+    assert_eq!(spawn1.active(), false);
+}
+
 // swarm itterator tests
 
 #[test]
@@ -128,8 +156,8 @@ fn forall_cross_referencing() {
     let s_john = swarm.spawn().unwrap();
     let s_cristy = swarm.spawn().unwrap();
 
-    swarm.properties.john = Some(Rc::clone(&s_john));
-    swarm.properties.cristy = Some(Rc::clone(&s_cristy));
+    swarm.properties.john = Some(s_john.mirror());
+    swarm.properties.cristy = Some(s_cristy.mirror());
 
     swarm.get_mut(&s_john).name = byte_name("John");
     swarm.get_mut(&s_cristy).name = byte_name("Cristy");
@@ -139,13 +167,13 @@ fn forall_cross_referencing() {
         // john tells critsy to have a value of 2
         if list[*index].name == byte_name("John") { 
             if let Some(cristy) = &props.cristy {
-                list[*cristy.borrow().pos()].value = 2; 
+                list[cristy.pos()].value = 2; 
             }
         }
         // cristy tells john to have a value of 1
         if list[*index].name == byte_name("Cristy") { 
             if let Some(john) = &props.john {
-                list[*john.borrow().pos()].value = 1; 
+                list[john.pos()].value = 1; 
             }
         }
     });
@@ -161,26 +189,29 @@ fn forall_cross_referencing() {
 #[allow(unused_must_use)]
 fn destroying_spawned_instances() {
     let mut swarm = Swarm::<Minion, _>::new(10, ());
-    let spawn = swarm.spawn().unwrap();
+    let spawn1 = swarm.spawn().unwrap();
     
     swarm.for_each(|obj| obj.value += 1);
-    assert_eq!(swarm.get_ref(&spawn).value, 1);
+    assert_eq!(swarm.get_ref(&spawn1).value, 1);
 
-    let copy_of_spawn = spawn.clone();
-    swarm.kill(spawn);
+    swarm.kill(&spawn1);
 
     // After a spawn is killed, it is sill accessible but is not passed to the for loop.
     // It should not be used anymore. This is why the spawn reference is consumed by the kill
     // methode, and we had to create a copy in order to access it.
     swarm.for_each(|obj| obj.value += 1);
-    assert_eq!(swarm.get_ref(&copy_of_spawn).value, 1);
-    
-    // If we would create a second spawn, the memory slot of the previously killed spawn is 
-    // allocated to the new spawn. This override example is not how the swarm system is intended 
-    // to be used, the behaviour will become unpredictable when creating and killing multiple spawns
+    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(spawn1.active(), false);
+
+    // NOTE: spawn pointers that are killed, go on a re-use stack.
+    // In this case spawn1 is killed and therefore nothing points to the linked data slot
+    // Because we want to re-use the data slot after a kill, new spawns (in this case spawn2)
+    // will points to the same data as spawn1 would have done. 
+    // In this case spawn1 and spawn2 are actually the same pointer, split up by a reference counter.
     let spawn2 = swarm.spawn().unwrap();
     swarm.get_mut(&spawn2).value = 42;
-    assert_eq!(swarm.get_ref(&copy_of_spawn).value, 42);
+    assert_eq!(swarm.get_ref(&spawn1).value, 42);
+    assert_eq!(spawn1, spawn2);
  }
 
 //  #[test]

@@ -5,14 +5,11 @@ pub mod control;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt;
 use control::SwarmControl;
 
 // types
 
-// pub trait SwarmType: Default + Copy {}
-// pub trait SwarmProperties {}
-
-pub type Spawn = Rc<RefCell<Tag>>;
 pub type ObjectIndex = usize;
 pub type SpawnId = usize;
 
@@ -20,9 +17,30 @@ pub type ForEachHandler<T> = fn(&mut T);
 pub type ForAllHandler<T, P> = fn(&ObjectIndex, &mut [T], &mut P);
 pub type UpdateHandler<T, P> = fn(&SpawnId, &mut Swarm<T, P>);
 
-// tags
+// spawns and tags
 
-#[derive(Default, Debug)]
+pub struct Spawn(Rc<RefCell<Tag>>);
+
+impl Spawn {
+    pub fn id(&self) -> SpawnId { self.0.borrow().id }
+    pub fn pos(&self) -> ObjectIndex { self.0.borrow().pos }
+    pub fn active(&self) -> bool { self.0.borrow().active }
+    pub fn mirror(&self) -> Self { Spawn (Rc::clone(&self.0)) }
+}
+
+impl fmt::Debug for Spawn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl PartialEq for Spawn {
+    fn eq(&self, other: &Spawn) -> bool {
+        self.id() == other.id()
+    }
+}
+
+#[derive(Default, Debug, PartialEq)]
 pub struct Tag {
     pub(crate) id: SpawnId,
     pub(crate) pos: ObjectIndex,
@@ -48,9 +66,11 @@ pub struct Swarm<T: Default + Copy, P> {
 impl<T: Default + Copy, P> Swarm<T, P> {
 
     pub fn new(size: usize, properties: P) -> Self {
-        let mut tags = Vec::<Rc<RefCell<Tag>>>::new();
+        let mut tags = Vec::<Spawn>::new();
         for i in 0..size { 
-            let tag = Rc::new(RefCell::new(Tag{ id:i, pos:i, active:false }));
+            let tag = Spawn (
+                Rc::new(RefCell::new(Tag{ id:i, pos:i, active:false }))
+            );
             tags.push(tag);
         }
 
@@ -64,31 +84,35 @@ impl<T: Default + Copy, P> Swarm<T, P> {
 
     // pooling
 
-    pub fn spawn(&mut self) -> Option<Rc<RefCell<Tag>>> { // Result<SpawnId, error::SwarmError> {
+    pub fn spawn(&mut self) -> Option<Spawn> { // Result<SpawnId, error::SwarmError> {
         match self.control.spawn() { 
             Some((id, index)) => {
                 let tag = &self.tags[index];
-                    tag.borrow_mut().id = id;
-                    tag.borrow_mut().pos = index;
-                    tag.borrow_mut().active = true;
+                    tag.0.borrow_mut().id = id;
+                    tag.0.borrow_mut().pos = index;
+                    tag.0.borrow_mut().active = true;
 
-                Some(Rc::clone(&tag))
+                Some(tag.mirror())
             },
             None => None
         }
     }
 
-    pub fn kill(&mut self, target: Spawn) -> Result<(), error::SwarmError> {
+    pub fn kill(&mut self, target: &Spawn) -> Result<(), error::SwarmError> {
+        target.0.borrow_mut().active = false;
+        
         let pool = &mut self.pool;
         let tags = &mut self.tags;
 
-        self.control.kill(target.borrow().id, |from, to| {
+        self.control.kill(target.0.borrow().id, |from, to| {
             pool[*to] = pool[*from];
+            tags[*to].0.borrow_mut().pos = *from;
+            tags[*from].0.borrow_mut().pos = *to;
 
-            let to_tag = tags[*to].clone();
-            let from_tag = tags[*from].clone();
-            tags[*to] = from_tag;
-            tags[*from] = to_tag;
+            // let to_tag = tags[*to].mirror();
+            // let from_tag = tags[*from].mirror();
+            // tags[*to] = from_tag;
+            // tags[*from] = to_tag;
         })                              
     }
 
@@ -103,11 +127,11 @@ impl<T: Default + Copy, P> Swarm<T, P> {
     // }
 
     pub fn get_mut(&mut self, spawn: &Spawn) -> &mut T { 
-        &mut self.pool[self.control.map[spawn.borrow().id]]
+        &mut self.pool[spawn.pos()]
     }
 
     pub fn get_ref(&self, spawn: &Spawn) -> &T { 
-        &self.pool[self.control.map[spawn.borrow().id]]
+        &self.pool[spawn.pos()]
     }
 
     pub fn raw_mut(&mut self, spawn_id: &SpawnId) -> &mut T { 
@@ -163,13 +187,11 @@ impl<T: Default + Copy, P> Swarm<T, P> {
         #[allow(unused_must_use)]
         while i < len2 {
             self.kill(
-                Rc::clone(
-                    &self.tags[
-                        self.control.map[
-                            self.control.delayed_kills[i]
-                        ]
+                &self.tags[
+                    self.control.map[
+                        self.control.delayed_kills[i]
                     ]
-                )
+                ].mirror()
             );
             i += 1;
         }

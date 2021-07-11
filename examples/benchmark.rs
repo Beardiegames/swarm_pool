@@ -112,7 +112,7 @@ fn bench_with(run_id: &mut usize, objects: usize) -> (Speed, Speed, Speed, Speed
         let m_calls = (vec_spd.1 / 1_000_000.0).round();
         println!("{}M calls/s @ {}M upd/s", m_calls, m_calls / objects as f64);
     }
-
+    
     let for_h_spd = for_heap_bencher(run_id, objects);
     {
         let m_calls = (for_h_spd.1 / 1_000_000.0).round();
@@ -166,7 +166,7 @@ pub fn cmp(a:&f64, b:&f64) -> Ordering {
 fn vec_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     *id += 1;
     print!("{}: Standard Vec bench for {} object(s).. ",id, amount);
-    std::io::stdout().flush();
+    #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get 'standard vector' thread speed
     let mut vec_test = vec![Minion::default(); amount];
@@ -190,7 +190,7 @@ fn vec_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 fn for_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     *id += 1;
     print!("{}: Swarm.for_each() bench with {} object(s).. ", id, amount);
-    std::io::stdout().flush();
+    #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get swarm ecs system speed
     let mut swarm = Swarm::<Minion, _>::new(amount, ());
@@ -216,7 +216,8 @@ fn for_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 fn forall_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     *id += 1;
     print!("{}: Swarm.for_all() bench with {} object(s).. ", id, amount);
-    std::io::stdout().flush();
+    #[allow(unused_must_use)] { std::io::stdout().flush(); }
+    
     // get swarm ecs system speed
     let mut swarm = Swarm::<Minion, _>::new(amount, ());
     let s_first = swarm.spawn().unwrap();
@@ -244,7 +245,7 @@ fn forall_heap_bencher(id: &mut usize, amount: usize) -> Speed {
 fn update_heap_bencher(id: &mut usize, amount: usize) -> Speed {
     *id += 1;
     print!("{}: Swarm.update() bench with {} object(s).. ", id, amount);
-    std::io::stdout().flush();
+    #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
     // get swarm ecs system speed
     let mut swarm = Swarm::<Minion, _>::new(amount, ());
