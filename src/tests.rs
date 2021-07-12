@@ -2,7 +2,7 @@
 
 use crate::*;
 use crate::{ Spawn };
-use crate as swarm;
+//use crate as swarm;
 //use std::convert::TryInto;
 
 
@@ -262,7 +262,7 @@ fn update_cross_referencing() {
 fn creating_spawns_during_update_loop() {
     let mut swarm = Swarm::<Minion, _>::new(10, ());
     
-    let spawn1 = &swarm.spawn().unwrap();
+    let _spawn1 = &swarm.spawn().unwrap();
     assert_eq!(swarm.count(), 1);
 
     swarm.update(|ctx| {
