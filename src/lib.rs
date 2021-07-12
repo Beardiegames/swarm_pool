@@ -16,6 +16,7 @@ pub type SpawnId = usize;
 pub type ForEachHandler<T> = fn(&mut T);
 pub type ForAllHandler<T, P> = fn(&ObjectPosition, &mut [T], &mut P);
 pub type UpdateHandler<T, P> = fn(ObjectPosition, &mut Swarm<T, P>);
+pub type Update2Handler<T, P> = fn(&mut SwarmContext<T, P>);
 
 // spawns and tags
 
@@ -56,12 +57,119 @@ impl Tag {
 
 // swarm code
 
-pub struct Swarm<T: Default + Copy, P> {
+pub struct SwarmContext<'a, T, P> {
+    order: &'a mut Vec<usize>,
+    pos: usize,
+    len: usize,
+    max: &'a usize,
+    spawns: &'a mut Vec<Spawn>,
+    free: &'a mut Vec<Spawn>,
+    
+    pub pool: &'a mut Vec<T>,
+    pub properties: &'a mut P,
+}
+
+impl<'a, T: Default + Copy, P> SwarmContext<'a, T, P> {
+
+    pub fn target(&mut self) -> &mut T {
+        &mut self.pool[self.pos]
+    }
+
+    pub fn target_spawn(&self) -> Spawn {
+        self.spawns[self.pos].mirror()
+    }
+
+    pub fn head(&self) -> ObjectPosition {
+        self.order[self.pos]
+    }
+
+    pub fn get(&mut self, pos: &ObjectPosition) -> &mut T {
+        &mut self.pool[*pos]
+    }
+
+    pub fn spawn(&mut self) -> Option<Spawn> {
+        crate::spawn(self)
+    }
+
+    pub fn kill(&mut self, spawn: &Spawn) {
+        crate::kill(spawn, self)
+    }
+
+    pub fn kill_current(&mut self) {
+        crate::kill(&self.spawns[self.pos].mirror(), self)
+    }
+
+    pub fn spawn_at(&self, pos: &ObjectPosition) -> Spawn {
+        self.spawns[*pos].mirror()
+    }
+}
+
+pub fn spawn<T: Default + Clone, P> (ctx: &mut SwarmContext<T, P>) -> Option<Spawn> {
+    if ctx.len < *ctx.max {
+
+        ctx.len += 1;
+        let pos = ctx.len - 1;
+ 
+        if ctx.free.len() > 0 {
+            ctx.free.pop().map(|s| { 
+                s.0.borrow_mut().pos = pos; 
+                s.0.borrow_mut().active = true;
+                s 
+            })
+        } else {
+            
+            let s = &ctx.spawns[pos];
+                s.0.borrow_mut().pos = pos;
+                s.0.borrow_mut().active = true;
+
+            Some(s.mirror())
+        }
+    } else {
+        None
+    }
+}
+
+pub fn kill<T: Default + Copy, P> (target: &Spawn, ctx: &mut SwarmContext<T, P>) {
+    target.0.borrow_mut().active = false;
+    
+    let last_pos = ctx.len - 1;
+    let target_pos = target.pos();
+
+    if ctx.len > 1 && target_pos < last_pos {
+        
+        let last_val = ctx.pool[last_pos];
+        let target_val = ctx.pool[target_pos];
+
+        // swap content to back
+        ctx.pool[target_pos] = last_val;
+        ctx.pool[last_pos] = target_val;
+
+        // swap spawns equally
+        ctx.spawns[target_pos] = ctx.spawns[last_pos].mirror();
+        ctx.spawns[last_pos] = target.mirror();
+
+        // set swapped spawn values to point to their own location
+        ctx.spawns[target_pos].0.borrow_mut().pos = target_pos;
+        ctx.spawns[last_pos].0.borrow_mut().pos = last_pos;
+
+        if target_pos > ctx.pos { ctx.order[target_pos] = last_pos; }
+        if last_pos > ctx.pos { ctx.order[last_pos] = target_pos; }
+    }
+
+    // store and decrement size             
+    if ctx.len > 0 { 
+        ctx.free.push(target.mirror());
+        ctx.len -= 1; 
+    }
+}
+
+pub struct Swarm<T, P> {
     pool: Vec<T>,
     spawns: Vec<Spawn>,
     free: Vec<Spawn>,
     len: usize,
     max: usize,
+    order: Vec<usize>,
     iter: usize,
 
     pub properties: P,
@@ -70,13 +178,15 @@ pub struct Swarm<T: Default + Copy, P> {
 impl<T: Default + Copy, P> Swarm<T, P> {
 
     pub fn new(size: usize, properties: P) -> Self {
-        let mut spawns = Vec::<Spawn>::new();
+        let mut spawns = Vec::<Spawn>::with_capacity(size);
+        let mut order = Vec::<usize>::with_capacity(size);
 
         for i in 0..size { 
             let tag = Spawn (
                 Rc::new(RefCell::new(Tag{ id:i, pos:i, active:false }))
             );
             spawns.push(tag);
+            order.push(i);
         }
 
         Swarm { 
@@ -85,99 +195,56 @@ impl<T: Default + Copy, P> Swarm<T, P> {
             free: Vec::<Spawn>::with_capacity(size),
             len: 0,
             max: size,
-            iter: 0,
+            order,
+            iter:0,
 
             properties,
         }
     }
 
     // pooling
+    
+    pub fn context(&mut self) -> SwarmContext<T, P> {
+        SwarmContext {
+            order: &mut self.order,
+            pos: 0,
+            len: self.len,
+            max: &self.max, 
+            spawns: &mut self.spawns, 
+            free: &mut self.free,
+
+            pool: &mut self.pool, 
+            properties: &mut self.properties,
+        }
+    }
 
     pub fn spawn(&mut self) -> Option<Spawn> {
-        if self.len < self.max {
-
-            if self.iter >= self.len { self.iter += 1; }
-            self.len += 1;
-            let pos = self.len-1;
-
-            if self.free.len() > 0 {
-                self.free.pop().map(|s| { s.0.borrow_mut().pos = pos; s })
-            } else {
-                
-                let tag = &self.spawns[pos];
-                    tag.0.borrow_mut().id = pos;
-                    tag.0.borrow_mut().pos = pos;
-                    tag.0.borrow_mut().active = true;
-
-                Some(tag.mirror())
-            }
-        } else {
-            None
-        }
+        let mut ctx = self.context();
+        let result = crate::spawn(&mut ctx);
+        self.len = ctx.len;
+        result
     }
 
     pub fn kill(&mut self, target: &Spawn) {
-        target.0.borrow_mut().active = false;
-        
-        let pool = &mut self.pool;
-        let spawns = &mut self.spawns;
-
-        if self.len > 1 {
-            let last_pos = self.len - 1;
-            let target_pos = target.0.borrow().pos;
-
-            // swap content to back
-            pool[target_pos] = pool[last_pos];
-            spawns[target_pos].0.borrow_mut().pos = last_pos;
-            spawns[last_pos].0.borrow_mut().pos = target_pos;
-
-            self.free.push(target.mirror());
-
-            // if in iter loop: 
-            // if a not yet updated spawn was swapped with an already updated spawn 
-            // the update iter head will be set to that spawns position
-            if self.iter < last_pos {
-                if target_pos == self.iter { 
-                    self.iter -= 1; 
-                }
-                else if target_pos < self.iter { 
-                    // swap swapped with current being updated, then subtract
-                    let iter_pos = self.iter - 1;
-                    let swapped = pool[target_pos];
-                    let current = pool[iter_pos];
-
-                    pool[target_pos] = current;
-                    pool[iter_pos] = swapped;
-
-                    spawns[target_pos].0.borrow_mut().pos = iter_pos;
-                    spawns[iter_pos].0.borrow_mut().pos = target_pos;
-                    self.iter -= 1;
-                }
-            }
-        }
-
-        // decrement size             
-        if self.len > 0 { 
-            self.len -= 1; 
-        }                           
+        let mut ctx = self.context();
+        let reset_order = target.pos();
+        crate::kill(target, &mut ctx);
+        self.len = ctx.len;
+        self.order[reset_order] = reset_order;
     }
-
-    // pub fn delayed_kill(&mut self, target: SpawnId) {
-    //     self.control.delayed_kill(target);
-    // }
 
     // states & references
 
-    pub fn get_spawn(&self, pos: &ObjectPosition) -> Spawn {
+    pub fn spawn_at(&self, pos: &ObjectPosition) -> Spawn {
         self.spawns[*pos].mirror()
     }
 
-    pub fn get_mut(&mut self, spawn: &Spawn) -> &mut T { 
-        &mut self.pool[spawn.pos()]
+    pub fn get(&mut self, spawn: &Spawn) -> &mut T { 
+        &mut self.pool[spawn.0.borrow().pos]
     }
 
     pub fn get_ref(&self, spawn: &Spawn) -> &T { 
-        &self.pool[spawn.pos()]
+        &self.pool[spawn.0.borrow().pos]
     }
 
     pub fn get_raw(&mut self, pos: &ObjectPosition) -> &mut T { 
@@ -209,36 +276,18 @@ impl<T: Default + Copy, P> Swarm<T, P> {
             i += 1;
         }
     }
-}
 
-pub fn update<T, P> (swarm: &mut Swarm<T, P>, handler: UpdateHandler<T, P>) 
-where T: Default + Copy
-{
-    //swarm.locked = true;
+    pub fn update(&mut self, handler: Update2Handler<T, P>) {
+        let mut i = 0;
+        let len = self.len;
+        let mut ctx = self.context();
 
-    //let len1 = swarm.len;
-    //let len2 = swarm.control.dkill_amount;
-    swarm.iter = 0;
-    while &swarm.iter < &swarm.len {
-        handler(swarm.iter, swarm);
-        swarm.iter += 1;
+        while &i < &len {
+            ctx.pos = ctx.order[*&i];
+            handler(&mut ctx);
+            ctx.order[*&i] = i; 
+            i += 1;
+        }
+        self.len = ctx.len;
     }
-
-    //swarm.locked = false;
-
-    //i = 0;
-
-    // #[allow(unused_must_use)]
-    // while i < len2 {
-    //     self.kill(
-    //         &self.spawns[
-    //             self.control.map[
-    //                 self.control.delayed_kills[i]
-    //             ]
-    //         ].mirror()
-    //     );
-    //     i += 1;
-    // }
-    
-    // self.control.dkill_amount = 0;
 }

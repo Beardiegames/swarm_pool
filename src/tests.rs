@@ -2,7 +2,7 @@
 
 use crate::*;
 use crate::{ Spawn };
-//use crate as swarm;
+use crate as swarm;
 //use std::convert::TryInto;
 
 
@@ -60,7 +60,7 @@ fn referencing_spawn_instance_bodies() {
     let mut swarm = Swarm::<Minion, _>::new(10, ());
     let spawn = swarm.spawn().unwrap();
     
-    swarm.get_mut(&spawn).value = 42;
+    swarm.get(&spawn).value = 42;
     assert_eq!(swarm.get_ref(&spawn).value, 42);
 }
 
@@ -159,8 +159,8 @@ fn forall_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.get_mut(&s_john).name = byte_name("John");
-    swarm.get_mut(&s_cristy).name = byte_name("Cristy");
+    swarm.get(&s_john).name = byte_name("John");
+    swarm.get(&s_cristy).name = byte_name("Cristy");
 
     swarm.for_all(|index, list, props| {
 
@@ -187,7 +187,7 @@ fn forall_cross_referencing() {
 
 #[test]
 #[allow(unused_must_use)]
-fn destroying_spawned_instances() {
+fn killing_spawned_instances() {
     let mut swarm = Swarm::<Minion, _>::new(10, ());
     let spawn1 = swarm.spawn().unwrap();
     
@@ -195,11 +195,20 @@ fn destroying_spawned_instances() {
     assert_eq!(swarm.get_ref(&spawn1).value, 1);
 
     swarm.kill(&spawn1);
+    assert_eq!(swarm.len, 0);
 
     // After a spawn is killed, it is sill accessible but is not passed to the for loop.
     // It should not be used anymore. This is why the spawn reference is consumed by the kill
     // methode, and we had to create a copy in order to access it.
     swarm.for_each(|obj| obj.value += 1);
+    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(spawn1.active(), false);
+
+    swarm.for_all(|tar, list, _props| list[*tar].value += 1);
+    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(spawn1.active(), false);
+
+    swarm.update(|ctx| ctx.target().value += 1);
     assert_eq!(swarm.get_ref(&spawn1).value, 1);
     assert_eq!(spawn1.active(), false);
 
@@ -209,70 +218,141 @@ fn destroying_spawned_instances() {
     // will points to the same data as spawn1 would have done. 
     // In this case spawn1 and spawn2 are actually the same pointer, split up by a reference counter.
     let spawn2 = swarm.spawn().unwrap();
-    swarm.get_mut(&spawn2).value = 42;
+    swarm.get(&spawn2).value = 42;
     assert_eq!(swarm.get_ref(&spawn1).value, 42);
     assert_eq!(spawn1, spawn2);
  }
 
-//  #[test]
-// fn cross_referencing_spawns_in_update_loop() {
-//     let mut swarm = Swarm::<Minion, SwarmData>::new(10);
-//     let john = &swarm.spawn().unwrap();
-//     let cristy = &swarm.spawn().unwrap();
+ #[test]
+fn update_cross_referencing() {
+    let mut swarm = Swarm::<Minion, TrackSpawns>::new(10, TrackSpawns {
+        john: None,
+        cristy: None,
+    });
 
-//     let john_body = swarm.get_mut(john);
-//         john_body.name = byte_name("John");
-//         john_body.knows = *cristy;
+    let s_john = swarm.spawn().unwrap();
+    let s_cristy = swarm.spawn().unwrap();
 
-//     let cristy_body = swarm.get_mut(cristy);
-//         cristy_body.name = byte_name("Cristy");
-//         cristy_body.knows = *john;
+    swarm.properties.john = Some(s_john.mirror());
+    swarm.properties.cristy = Some(s_cristy.mirror());
 
-//     swarm.update(|target_id, swarm_ref| {
-//         let name = swarm_ref.get_ref(target_id).name;
+    swarm.get(&s_john).name = byte_name("John");
+    swarm.get(&s_cristy).name = byte_name("Cristy");
 
-//         // john tells critsy to have a value of 2
-//         if name == byte_name("John") { 
-//             let cristys_id = swarm_ref.get_ref(target_id).knows;
-//             swarm_ref.get_mut(&cristys_id).value = 2; 
-//         }
-//         // cristy tells john to have a value of 1
-//         if name == byte_name("Cristy") { 
-//             let johns_id = swarm_ref.get_ref(target_id).knows;
-//             swarm_ref.get_mut(&johns_id).value = 1;
-//         }   
-//     });
+    swarm.update(|ctx| {
+        let name = ctx.target().name;
+        let cristy = ctx.properties.cristy.as_ref().unwrap().mirror();
+        let john = ctx.properties.john.as_ref().unwrap().mirror();
 
-//     assert_eq!(swarm.get_ref(john).value, 1);
-//     assert_eq!(swarm.get_ref(cristy).value, 2);
-// }
+        // john tells critsy to have a value of 2
+        if name == byte_name("John") { 
+            ctx.get(&cristy.pos()).value = 2; 
+        }
+        // cristy tells john to have a value of 1
+        if name == byte_name("Cristy") { 
+            ctx.get(&john.pos()).value = 1; 
+        }
+    });
 
-// #[test]
-// fn creating_spawns_during_update_loop() {
-//     let mut swarm = Swarm::new(10);
-//     let john = &swarm.spawn().unwrap();
-//     let cristy = &swarm.spawn().unwrap();
+    assert_eq!(swarm.get_ref(&s_john).value, 1);
+    assert_eq!(swarm.get_ref(&s_cristy).value, 2);
+}
 
-//     let john_body = swarm.get_mut(john);
-//         john_body.name = String::from("John");
-//         john_body.knows = *cristy;
+#[test]
+fn creating_spawns_during_update_loop() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    
+    let spawn1 = &swarm.spawn().unwrap();
+    assert_eq!(swarm.count(), 1);
 
-//     let cristy_body = swarm.get_mut(cristy);
-//         cristy_body.name = String::from("Cristy");
-//         cristy_body.knows = *john;
+    swarm.update(|ctx| {
+        if ctx.head() == 0 { ctx.spawn();} 
+    });
+    assert_eq!(swarm.count(), 2);
 
-//     swarm::update(&mut swarm, |target, control| {
-//         let name: &str = &control.get_ref(target).name.clone();
-//         let knows: &swarm::Spawn = &control.get_ref(target).knows.clone();
+    swarm.update(|ctx| {
+        if ctx.head() <= 1 { ctx.spawn();}
+    });
+    assert_eq!(swarm.count(), 4);
 
-//         control.get_mut(knows).value = match name {
-//             "John" => 2, // john tells critsy to have a value of 2
-//             "Cristy" => 1, // cristy tell john to have a value of 1
-//             _ => 0,
-//         }
-            
-//     });
+    swarm.update(|ctx| {
+        if ctx.head() <= 3 { ctx.spawn();} 
+    });
+    assert_eq!(swarm.count(), 8);
+}
 
-//     assert_eq!(swarm.get_ref(john).value, 1);
-//     assert_eq!(swarm.get_ref(cristy).value, 2);
-// }
+#[test]
+fn killing_spawns_during_update_loop() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    
+    let spawn1 = &swarm.spawn().unwrap();
+    let spawn2 = &swarm.spawn().unwrap();
+    let spawn3 = &swarm.spawn().unwrap();
+    assert_eq!(swarm.len, 3);
+    assert_eq!(spawn1.pos(), 0);
+    assert_eq!(spawn2.pos(), 1);
+    assert_eq!(spawn3.pos(), 2);
+
+    // kill spawn2 on pos index 1
+    swarm.update(|ctx| {
+        let spawn = ctx.target_spawn();
+        if spawn.id() == 1 { ctx.kill_current(); }
+        println!("CTX len={}", ctx.len);
+    });
+    assert_eq!(swarm.count(), 2);
+
+    assert_eq!(spawn1.pos(), 0);
+    assert_eq!(spawn2.pos(), 2);
+    assert_eq!(spawn3.pos(), 1);
+    assert_eq!(spawn1.active(), true);
+    assert_eq!(spawn2.active(), false);
+    assert_eq!(spawn3.active(), true);
+
+    // spawn new
+    let spawn4 = &swarm.spawn().unwrap();
+    assert_eq!(spawn4, spawn2, "spawn4 should be the same as spawn2, because spawn2 was freed after kill");
+    assert_eq!(swarm.count(), 3);
+
+    assert_eq!(spawn1.pos(), 0);
+    assert_eq!(spawn2.pos(), 2);
+    assert_eq!(spawn3.pos(), 1);
+    assert_eq!(spawn4.pos(), 2);
+    assert_eq!(spawn1.active(), true);
+    assert_eq!(spawn2.active(), true);
+    assert_eq!(spawn3.active(), true);
+    assert_eq!(spawn4.active(), true);
+
+    // kill spawn1 on pos index 2
+    // swarm.update(|ctx| {
+    //     println!("PRE-KILL: {:?}", ctx.target_spawn());
+    // });
+    swarm.update(|ctx| {
+        if ctx.target_spawn().id() == 2 { ctx.kill(&ctx.spawn_at(&0)); }
+    });
+    // swarm.update(|ctx| {
+    //     println!("POST-KILL: {:?}", ctx.target_spawn());
+    // });
+    assert_eq!(swarm.count(), 2);
+
+    assert_eq!(spawn1.pos(), 2);
+    assert_eq!(spawn2.pos(), 0);
+    assert_eq!(spawn3.pos(), 1);
+    assert_eq!(spawn1.active(), false);
+    assert_eq!(spawn2.active(), true);
+    assert_eq!(spawn3.active(), true);
+
+    // kill all spawns
+    swarm.update(|ctx| {
+        println!("PRE-KILL: {:?}", ctx.target_spawn());
+        ctx.kill_current();
+        println!("POST-KILL: {:?}", ctx.target_spawn());
+    });
+    assert_eq!(swarm.count(), 0);
+
+    assert_eq!(spawn1.pos(), 2);
+    assert_eq!(spawn2.pos(), 1);
+    assert_eq!(spawn3.pos(), 0);
+    assert_eq!(spawn1.active(), false);
+    assert_eq!(spawn2.active(), false);
+    assert_eq!(spawn3.active(), false);
+}
