@@ -1,1 +1,1 @@
-cargo test bench --release -- --nocapture
+cargo run --bin benchmark --release
