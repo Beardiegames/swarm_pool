@@ -1,2 +1,2 @@
 # swarm
-Optimized object pooling system
+Optimized object pooling system for Rust
