@@ -2,7 +2,11 @@
 #[allow(unused_imports)]
 use std::cmp::Ordering;
 use std::io::Write;
-use swarm::*;
+
+extern crate swarm;
+use swarm::Swarm;
+
+// test mockup objects
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Summoning {
@@ -13,7 +17,6 @@ impl Summoning {
     pub fn add_one(&mut self) {
         self.calls += 1;
     }
-
 }
 
 pub struct SwarmData;
@@ -30,9 +33,11 @@ impl Minion {
     }
 }
 
+// bench test settings
 
 const NUM_SAMPLES: u128 = 2_000_000_000;
 
+// bench implementation
 
 fn main() {
     let mut run_id: usize = 0;
