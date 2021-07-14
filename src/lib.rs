@@ -2,6 +2,7 @@
 mod tests;
 mod context;
 mod types;
+mod tools;
 
 use context::SwarmContext;
 use types::*;
@@ -17,6 +18,34 @@ pub struct Swarm<T, P> {
     pub properties: P,
 }
 
+/// Swarm is an object pooling system optimized for perfomance.
+/// 
+/// The pooling system manages objects of your own cutom type,
+/// and iterate over them without too much performance.
+/// 
+/// ```
+/// extern crate swarm;
+/// use swarm::Swarm;
+/// 
+/// #[derive(Default, Copy, Clone)]     // Your pool object must implement these
+/// pub struct Minion {                 
+///     name: [u8; 6],                  // Swarm uses Copy and therfore only accepts Sized data!
+///     value: usize,                   // This means types such as String and Vec aren't allowed
+/// }                                   // In the tools module are a few tools that deal with this
+///
+/// impl Minion {
+///     pub fn add_one(&mut self) {
+///         self.value += 1;
+///     }
+/// }
+/// 
+/// pub struct SwarmProperties;         // Data you want to share with pool instances
+/// 
+/// fn main() {
+///     let swarm = Swarm::<Minion, SwarmProperties>::new(10, SwarmProperties);
+///     assert!(swarm.max_size() == 10);
+/// }
+/// ```
 impl<T: Default + Copy, P> Swarm<T, P> {
 
     pub fn new(size: usize, properties: P) -> Self {

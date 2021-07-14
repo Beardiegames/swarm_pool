@@ -5,7 +5,6 @@ authors = ["Thomas vanden Bighelaar <thomas@beardiegames.com>"]
 edition = "2018"
 description = "Optimized object pooling system for Rust"
 readme = "README.md"
-license = "MIT"
 license-file="License.txt"
 
 [dependencies]

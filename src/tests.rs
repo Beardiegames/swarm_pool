@@ -2,6 +2,7 @@
 
 use crate::*;
 use crate::{ Spawn };
+use crate::tools::ByteStr;
 //use crate as swarm;
 //use std::convert::TryInto;
 
@@ -19,7 +20,7 @@ pub struct TrackSpawns {
 
 #[derive(Default, Copy, Clone)]
 pub struct Minion {
-    name: [u8; 6],
+    name: ByteStr,
     value: usize,
 }
 
@@ -27,16 +28,6 @@ impl Minion {
     pub fn add_one(&mut self) {
         self.value += 1;
     }
-}
-
-fn byte_name(str: &str) -> [u8; 6] {
-    let mut result = [0; 6];
-    let byte_str = str.as_bytes();
-    for i in 0..byte_str.len() {
-        if i < 6 { result[i] = byte_str[i]; }
-        else { break; }
-    }
-    result
 }
 
 // basic swarm tests
@@ -159,19 +150,19 @@ fn forall_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.get(&s_john).name = byte_name("John");
-    swarm.get(&s_cristy).name = byte_name("Cristy");
+    swarm.get(&s_john).name = ByteStr::from("John");
+    swarm.get(&s_cristy).name = ByteStr::from("Cristy");
 
     swarm.for_all(|index, list, props| {
 
         // john tells critsy to have a value of 2
-        if list[*index].name == byte_name("John") { 
+        if list[*index].name == ByteStr::from("John") { 
             if let Some(cristy) = &props.cristy {
                 list[cristy.pos()].value = 2; 
             }
         }
         // cristy tells john to have a value of 1
-        if list[*index].name == byte_name("Cristy") { 
+        if list[*index].name == ByteStr::from("Cristy") { 
             if let Some(john) = &props.john {
                 list[john.pos()].value = 1; 
             }
@@ -236,8 +227,8 @@ fn update_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.get(&s_john).name = byte_name("John");
-    swarm.get(&s_cristy).name = byte_name("Cristy");
+    swarm.get(&s_john).name = ByteStr::from("John");
+    swarm.get(&s_cristy).name = ByteStr::from("Cristy");
 
     swarm.update(|ctx| {
         let name = ctx.target().name;
@@ -245,11 +236,11 @@ fn update_cross_referencing() {
         let john = ctx.properties.john.as_ref().unwrap().mirror();
 
         // john tells critsy to have a value of 2
-        if name == byte_name("John") { 
+        if name == "John" { 
             ctx.get(&cristy.pos()).value = 2; 
         }
         // cristy tells john to have a value of 1
-        if name == byte_name("Cristy") { 
+        if name == "Cristy" { 
             ctx.get(&john.pos()).value = 1; 
         }
     });
