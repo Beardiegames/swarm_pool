@@ -1,8 +1,8 @@
 #[allow(dead_code)]
 mod tests;
-mod context;
-mod types;
-mod tools;
+pub mod context;
+pub mod types;
+pub mod tools;
 
 use context::SwarmContext;
 use types::*;
