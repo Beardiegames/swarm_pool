@@ -1,23 +1,23 @@
 use super::StackPool;
 
-// POOL 256
+// POOL 64
 
-const CAPACITY: usize = 256;
+const CAPACITY: usize = 64;
 
-pub struct StackPool256<ItemType> { 
+pub struct SizedPool64<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
-    order: [usize; CAPACITY], 
+    order: [usize; CAPACITY],
     count: usize,
 }
 
-impl<ItemType> StackPool256<ItemType>
+impl<ItemType> SizedPool64<ItemType>
 where ItemType: Copy + PartialEq
 {
     #[allow(unused)]
     pub fn new() -> Self {
         let mut order = [0; CAPACITY]; 
         for i in 0..CAPACITY { order[i] = i; }
-        StackPool256 {
+        SizedPool64 {
             items: [None; CAPACITY],
             order,
             count: 0,
@@ -35,7 +35,7 @@ where ItemType: Copy + PartialEq
     }
 }
 
-impl<ItemType> StackPool<ItemType> for StackPool256<ItemType> {
+impl<ItemType> StackPool<ItemType> for SizedPool64<ItemType> {
     fn count(&self) -> &usize { 
         &self.count 
     }

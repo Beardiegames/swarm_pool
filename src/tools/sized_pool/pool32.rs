@@ -5,20 +5,20 @@ use super::StackPool;
 
 const CAPACITY: usize = 32;
 
-pub struct StackPool32<ItemType> { 
+pub struct SizedPool32<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
     order: [usize; CAPACITY], 
     count: usize,
 }
 
-impl<ItemType> StackPool32<ItemType>
+impl<ItemType> SizedPool32<ItemType>
 where ItemType: Copy + PartialEq
 {
     #[allow(unused)]
     pub fn new() -> Self {
         let mut order = [0; CAPACITY]; 
         for i in 0..CAPACITY { order[i] = i; }
-        StackPool32 {
+        SizedPool32 {
             items: [None; CAPACITY],
             order,
             count: 0,
@@ -36,7 +36,7 @@ where ItemType: Copy + PartialEq
     }
 }
 
-impl<ItemType> StackPool<ItemType> for StackPool32<ItemType> {
+impl<ItemType> StackPool<ItemType> for SizedPool32<ItemType> {
     fn count(&self) -> &usize { 
         &self.count 
     }

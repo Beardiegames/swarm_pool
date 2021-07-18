@@ -4,11 +4,11 @@ mod pool64;
 mod pool128;
 mod pool256;
 
-#[allow(unused_imports)] pub use pool16::StackPool16;
-#[allow(unused_imports)] pub use pool32::StackPool32;
-#[allow(unused_imports)] pub use pool64::StackPool64;
-#[allow(unused_imports)] pub use pool128::StackPool128;
-#[allow(unused_imports)] pub use pool256::StackPool256;
+pub use pool16::SizedPool16;
+pub use pool32::SizedPool32;
+pub use pool64::SizedPool64;
+pub use pool128::SizedPool128;
+pub use pool256::SizedPool256;
 
 pub trait StackPool <ItemType> {
     fn count(&self) -> &usize;
@@ -28,20 +28,20 @@ pub trait StackPool <ItemType> {
 /// 
 /// Example:
 /// ```
-/// use swarm::tools::pool::StackPool16;
-/// use swarm::tools::pool;
+/// use swarm::tools::sized_pool::SizedPool16;
+/// use swarm::tools::sized_pool;
 /// 
 /// fn main() {
-///     let mut pool16: StackPool16<u8> = StackPool16::new();
-///     pool::push(&mut pool16, 1);
-///     pool::push(&mut pool16, 2);
-///     pool::push(&mut pool16, 3);
+///     let mut pool: SizedPool16<u8> = SizedPool16::new();
+///     sized_pool::push(&mut pool, 1);
+///     sized_pool::push(&mut pool, 2);
+///     sized_pool::push(&mut pool, 3);
 ///     
-///     pool::for_each(&mut pool16, |item| *item *= 2 );
+///     sized_pool::for_each(&mut pool, |item| *item *= 2 );
 /// 
-///     assert_eq!(pool16.get_ref(&0), &Some(2));
-///     assert_eq!(pool16.get_ref(&1), &Some(4));
-///     assert_eq!(pool16.get_ref(&2), &Some(6));
+///     assert_eq!(pool.get_ref(&0), &Some(2));
+///     assert_eq!(pool.get_ref(&1), &Some(4));
+///     assert_eq!(pool.get_ref(&2), &Some(6));
 /// }
 /// ```
 pub fn for_each<ItemType, Pool, Callback>(pool: &mut Pool, handler: Callback) 
