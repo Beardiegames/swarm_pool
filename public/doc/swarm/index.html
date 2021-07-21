@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An object pooling system optimized for perfomance."><meta name="keywords" content="rust, rustlang, rust-lang, swarm"><title>swarm - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../swarm/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><p class="location">Crate swarm</p><div class="block version"><p>Version 0.1.0</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all swarm's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li></ul></div><p class="location"></p><div id="sidebar-vars" data-name="swarm" data-ty="mod" data-relpath="../"></div></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="">swarm</a></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/swarm/lib.rs.html#1-275" title="goto source code">[src]</a></span></h1><div class="docblock"><p>An object pooling system optimized for perfomance.</p>
+<p>The pooling system manages object instances of a cutom type,
+and provides update loops to over them.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">swarm</span>;
+<span class="kw">use</span> <span class="ident">swarm</span>::<span class="ident">Swarm</span>;
+<span class="kw">use</span> <span class="ident">swarm</span>::<span class="ident">tools</span>::<span class="ident">byte_str</span>::<span class="ident">ByteStr</span>;
+ 
+<span class="comment">// create an object you want to pool</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>     <span class="comment">// The object you want to pool must implement these</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MyPoolObject</span> {           <span class="comment">// Swarm uses Copy and therfore only accepts Sized properties!</span>
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">ByteStr</span>,              <span class="comment">// This means types such as String and Vec aren&#39;t allowed</span>
+    <span class="kw">pub</span> <span class="ident">value</span>: <span class="ident">usize</span>,               <span class="comment">// The tools module has a few tools that deal with this</span>
+}
+ 
+<span class="comment">// create properties you want to share with pooled objects</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MySwarmProperties</span>;
+ 
+<span class="kw">fn</span> <span class="ident">main</span>() {
+    <span class="kw">let</span> <span class="ident">swarm</span> <span class="op">=</span> <span class="ident">Swarm</span>::<span class="op">&lt;</span><span class="ident">MyPoolObject</span>, <span class="ident">MySwarmProperties</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">10</span>, <span class="ident">MySwarmProperties</span>);
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">swarm</span>.<span class="ident">capacity</span>() <span class="op">=</span><span class="op">=</span> <span class="number">10</span>);
+}</pre></div>
+</div><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
+<table><tr class="module-item"><td><a class="mod" href="control/index.html" title="swarm::control mod">control</a></td><td class="docblock-short"><p>Controling a swarm during the swarm.update() loop</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="tools/index.html" title="swarm::tools mod">tools</a></td><td class="docblock-short"><p>Tools contains a set of Sized types that can be useful when creating pool objects.
+Beacuse pool objects must Sized, all of their properties must be Sized.</p>
+</td></tr><tr class="module-item"><td><a class="mod" href="types/index.html" title="swarm::types mod">types</a></td><td class="docblock-short"><p>Types used by the Swarm pool.</p>
+</td></tr></table><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
+<table><tr class="module-item"><td><a class="struct" href="struct.Swarm.html" title="swarm::Swarm struct">Swarm</a></td><td class="docblock-short"><p>The actual Swarm pool</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="swarm" data-search-js="../search-index.js"></div>
+    <script src="../main.js"></script></body></html>
