@@ -11,7 +11,7 @@
 use std::str;
 use std::convert::From;
 use std::fmt;
-use std::fmt::Debug;
+//use std::fmt::Debug;
 
 /// Sized byte string with predefined sizes of 8, 16, 32 or 64 characters/bytes
 /// 
