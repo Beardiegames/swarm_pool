@@ -4,6 +4,7 @@ use super::StackPool;
 
 const CAPACITY: usize = 64;
 
+/// Sized pool object with a max capacity of 64 items.
 pub struct SizedPool64<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
     order: [usize; CAPACITY],
@@ -14,6 +15,7 @@ impl<ItemType> SizedPool64<ItemType>
 where ItemType: Copy + PartialEq
 {
     #[allow(unused)]
+    /// Creates a new pool.
     pub fn new() -> Self {
         let mut order = [0; CAPACITY]; 
         for i in 0..CAPACITY { order[i] = i; }
@@ -25,12 +27,12 @@ where ItemType: Copy + PartialEq
     }
 
     #[allow(unused)]
-    pub fn get_mut(&mut self, position: &usize) -> &mut Option<ItemType> {
+    pub(crate) fn get_mut(&mut self, position: &usize) -> &mut Option<ItemType> {
         &mut self.items[self.order[*position]]
     }
 
     #[allow(unused)]
-    pub fn get_ref(&self, position: &usize) -> &Option<ItemType> {
+    pub(crate) fn get_ref(&self, position: &usize) -> &Option<ItemType> {
         &self.items[self.order[*position]]
     }
 }

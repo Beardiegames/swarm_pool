@@ -1,7 +1,8 @@
+//! Controling a swarm during the swarm.update() loop
+
 use super::types::*;
 
-
-pub struct SwarmContext<'a, T, P> {
+pub struct SwarmControl<'a, T, P> {
     pub(crate) max: &'a usize,
     pub(crate) spawns: &'a mut Vec<Spawn>,
     pub(crate) free: &'a mut Vec<Spawn>,
@@ -13,7 +14,7 @@ pub struct SwarmContext<'a, T, P> {
     pub properties: &'a mut P,
 }
 
-impl<'a, T: Default + Copy, P> SwarmContext<'a, T, P> {
+impl<'a, T: Default + Copy, P> SwarmControl<'a, T, P> {
 
     pub fn target(&mut self) -> &mut T {
         &mut self.pool[self.pos]
@@ -27,7 +28,7 @@ impl<'a, T: Default + Copy, P> SwarmContext<'a, T, P> {
         self.order[self.pos]
     }
 
-    pub fn get(&mut self, pos: &ObjectPosition) -> &mut T {
+    pub fn fetch(&mut self, pos: &ObjectPosition) -> &mut T {
         &mut self.pool[*pos]
     }
 

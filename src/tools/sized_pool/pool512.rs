@@ -1,16 +1,17 @@
-
 use super::StackPool;
 
-const CAPACITY: usize = 16;
+// POOL 512
 
-/// Sized pool object with a max capacity of 16 items.
-pub struct SizedPool16<ItemType> { 
+const CAPACITY: usize = 512;
+
+/// Sized pool object with a max capacity of 512 items.
+pub struct SizedPool512<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
     order: [usize; CAPACITY], 
     count: usize,
 }
 
-impl<ItemType> SizedPool16<ItemType>
+impl<ItemType> SizedPool512<ItemType>
 where ItemType: Copy + PartialEq
 {
     #[allow(unused)]
@@ -18,7 +19,7 @@ where ItemType: Copy + PartialEq
     pub fn new() -> Self {
         let mut order = [0; CAPACITY]; 
         for i in 0..CAPACITY { order[i] = i; }
-        SizedPool16 {
+        SizedPool512 {
             items: [None; CAPACITY],
             order,
             count: 0,
@@ -36,7 +37,7 @@ where ItemType: Copy + PartialEq
     }
 }
 
-impl<ItemType> StackPool<ItemType> for SizedPool16<ItemType> {
+impl<ItemType> StackPool<ItemType> for SizedPool512<ItemType> {
     fn count(&self) -> &usize { 
         &self.count 
     }
@@ -64,7 +65,7 @@ impl<ItemType> StackPool<ItemType> for SizedPool16<ItemType> {
     fn item_sorted(&mut self, ord_index: &usize) -> &mut Option<ItemType> {
         &mut self.items[self.order[*ord_index]]
     }
-
+    
     fn order_at(&mut self, ord_index: &usize) -> &mut usize {
         &mut self.order[*ord_index]
     }

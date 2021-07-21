@@ -1,11 +1,9 @@
-#[cfg(test)]
+//! Swarm unit tests
 
+#[cfg(test)]
 use crate::*;
 use crate::{ Spawn };
-use crate::tools::ByteStr;
-//use crate as swarm;
-//use std::convert::TryInto;
-
+use crate::tools::byte_str::ByteStr;
 
 // sest values
 
@@ -35,7 +33,7 @@ impl Minion {
 #[test]
 fn creating_a_swarm() {
     let swarm = Swarm::<Minion, _>::new(10, ());
-    assert!(swarm.max_size() == 10);
+    assert!(swarm.capacity() == 10);
 }
 
 #[test]
@@ -51,8 +49,8 @@ fn referencing_spawn_instance_bodies() {
     let mut swarm = Swarm::<Minion, _>::new(10, ());
     let spawn = swarm.spawn().unwrap();
     
-    swarm.get(&spawn).value = 42;
-    assert_eq!(swarm.get_ref(&spawn).value, 42);
+    swarm.fetch(&spawn).value = 42;
+    assert_eq!(swarm.fetch_ref(&spawn).value, 42);
 }
 
 #[test]
@@ -91,15 +89,15 @@ fn foreach_loop_through_spawned_instances() {
     let spawn1 = swarm.spawn().unwrap();
     let spawn2 = swarm.spawn().unwrap();
     
-    assert_eq!(swarm.get_ref(&spawn1).value, 0);
-    assert_eq!(swarm.get_ref(&spawn2).value, 0);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 0);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 0);
 
     swarm.for_each(|obj| {
         obj.value = 42;
     });
 
-    assert_eq!(swarm.get_ref(&spawn1).value, 42);
-    assert_eq!(swarm.get_ref(&spawn2).value, 42);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 42);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 42);
 }
 
 #[test]
@@ -108,15 +106,15 @@ fn forall_loop_with_obj_references() {
     let spawn1 = swarm.spawn().unwrap();
     let spawn2 = swarm.spawn().unwrap();
     
-    assert_eq!(swarm.get_ref(&spawn1).value, 0);
-    assert_eq!(swarm.get_ref(&spawn2).value, 0);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 0);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 0);
 
-    swarm.for_all(|target, list, _props| {
-        list[*target].value = *target + 1;
+    swarm.for_all(|fetch, list, _props| {
+        list[*fetch].value = *fetch + 1;
     });
 
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
-    assert_eq!(swarm.get_ref(&spawn2).value, 2);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 2);
 }
 
 #[test]
@@ -127,14 +125,14 @@ fn forall_loop_with_swarm_properties() {
     let spawn1 = swarm.spawn().unwrap();
     let spawn2 = swarm.spawn().unwrap();
 
-    swarm.for_all(|target, list, props| {
+    swarm.for_all(|fetch, list, props| {
         props.counter += 1;
-        list[*target].value = props.counter;
+        list[*fetch].value = props.counter;
     });
 
     assert_eq!(swarm.properties.counter, 2);
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
-    assert_eq!(swarm.get_ref(&spawn2).value, 2);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 2);
 }
 
 #[test]
@@ -150,8 +148,8 @@ fn forall_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.get(&s_john).name = ByteStr::from("John");
-    swarm.get(&s_cristy).name = ByteStr::from("Cristy");
+    swarm.fetch(&s_john).name = ByteStr::from("John");
+    swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
 
     swarm.for_all(|index, list, props| {
 
@@ -169,8 +167,8 @@ fn forall_cross_referencing() {
         }
     });
 
-    assert_eq!(swarm.get_ref(&s_john).value, 1);
-    assert_eq!(swarm.get_ref(&s_cristy).value, 2);
+    assert_eq!(swarm.fetch_ref(&s_john).value, 1);
+    assert_eq!(swarm.fetch_ref(&s_cristy).value, 2);
 }
 
 
@@ -183,7 +181,7 @@ fn killing_spawned_instances() {
     let spawn1 = swarm.spawn().unwrap();
     
     swarm.for_each(|obj| obj.value += 1);
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
 
     swarm.kill(&spawn1);
     assert_eq!(swarm.len, 0);
@@ -192,15 +190,15 @@ fn killing_spawned_instances() {
     // It should not be used anymore. This is why the spawn reference is consumed by the kill
     // methode, and we had to create a copy in order to access it.
     swarm.for_each(|obj| obj.value += 1);
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
     assert_eq!(spawn1.active(), false);
 
     swarm.for_all(|tar, list, _props| list[*tar].value += 1);
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
     assert_eq!(spawn1.active(), false);
 
     swarm.update(|ctx| ctx.target().value += 1);
-    assert_eq!(swarm.get_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
     assert_eq!(spawn1.active(), false);
 
     // NOTE: spawn pointers that are killed, go on a re-use stack.
@@ -209,8 +207,8 @@ fn killing_spawned_instances() {
     // will points to the same data as spawn1 would have done. 
     // In this case spawn1 and spawn2 are actually the same pointer, split up by a reference counter.
     let spawn2 = swarm.spawn().unwrap();
-    swarm.get(&spawn2).value = 42;
-    assert_eq!(swarm.get_ref(&spawn1).value, 42);
+    swarm.fetch(&spawn2).value = 42;
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 42);
     assert_eq!(spawn1, spawn2);
  }
 
@@ -227,8 +225,8 @@ fn update_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.get(&s_john).name = ByteStr::from("John");
-    swarm.get(&s_cristy).name = ByteStr::from("Cristy");
+    swarm.fetch(&s_john).name = ByteStr::from("John");
+    swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
 
     swarm.update(|ctx| {
         let name = ctx.target().name;
@@ -237,16 +235,16 @@ fn update_cross_referencing() {
 
         // john tells critsy to have a value of 2
         if name == "John" { 
-            ctx.get(&cristy.pos()).value = 2; 
+            ctx.fetch(&cristy.pos()).value = 2; 
         }
         // cristy tells john to have a value of 1
         if name == "Cristy" { 
-            ctx.get(&john.pos()).value = 1; 
+            ctx.fetch(&john.pos()).value = 1; 
         }
     });
 
-    assert_eq!(swarm.get_ref(&s_john).value, 1);
-    assert_eq!(swarm.get_ref(&s_cristy).value, 2);
+    assert_eq!(swarm.fetch_ref(&s_john).value, 1);
+    assert_eq!(swarm.fetch_ref(&s_cristy).value, 2);
 }
 
 #[test]
@@ -315,13 +313,13 @@ fn killing_spawns_during_update_loop() {
 
     // kill spawn1 on pos index 2
     // swarm.update(|ctx| {
-    //     println!("PRE-KILL: {:?}", ctx.target_spawn());
+    //     println!("PRE-KILL: {:?}", ctx.fetch_spawn());
     // });
     swarm.update(|ctx| {
         if ctx.target_spawn().id() == 2 { ctx.kill(&ctx.spawn_at(&0)); }
     });
     // swarm.update(|ctx| {
-    //     println!("POST-KILL: {:?}", ctx.target_spawn());
+    //     println!("POST-KILL: {:?}", ctx.fetch_spawn());
     // });
     assert_eq!(swarm.count(), 2);
 

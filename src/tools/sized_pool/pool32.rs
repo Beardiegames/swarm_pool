@@ -5,6 +5,7 @@ use super::StackPool;
 
 const CAPACITY: usize = 32;
 
+/// Sized pool object with a max capacity of 32 items.
 pub struct SizedPool32<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
     order: [usize; CAPACITY], 
@@ -26,12 +27,12 @@ where ItemType: Copy + PartialEq
     }
 
     #[allow(unused)]
-    pub fn get_mut(&mut self, position: &usize) -> &mut Option<ItemType> {
+    pub(crate) fn get_mut(&mut self, position: &usize) -> &mut Option<ItemType> {
         &mut self.items[self.order[*position]]
     }
 
     #[allow(unused)]
-    pub fn get_ref(&self, position: &usize) -> &Option<ItemType> {
+    pub(crate) fn get_ref(&self, position: &usize) -> &Option<ItemType> {
         &self.items[self.order[*position]]
     }
 }
