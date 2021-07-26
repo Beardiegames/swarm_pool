@@ -188,7 +188,7 @@ fn vec_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     assert_eq!(vec_test[0].calls, NUM_SAMPLES / amount as u128);
 
     // return result
-    (id.clone(), speed)
+    (*id, speed)
 }
 
 fn for_heap_bencher(id: &mut usize, amount: u128) -> Speed {
@@ -215,7 +215,7 @@ fn for_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     let swarm_speed = (swarm.fetch(&s_first).calls * amount as u128) as f64 / swarm_time;
     assert_eq!(swarm.fetch(&s_first).calls, NUM_SAMPLES / amount);
 
-    (id.clone(), swarm_speed)
+    (*id, swarm_speed)
 }
 
 fn forall_heap_bencher(id: &mut usize, amount: u128) -> Speed {
@@ -246,7 +246,7 @@ fn forall_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     let swarm_speed = (swarm.fetch(&s_first).calls * amount as u128) as f64 / swarm_time;
     assert_eq!(swarm.fetch(&s_first).calls, NUM_SAMPLES / amount);
 
-    (id.clone(), swarm_speed)
+    (*id, swarm_speed)
 }
 
 fn update_heap_bencher(id: &mut usize, amount: u128) -> Speed {
@@ -277,7 +277,7 @@ fn update_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     let swarm_speed = (swarm.fetch(&s_first).calls * amount as u128) as f64 / swarm_time;
     assert_eq!(swarm.fetch(&s_first).calls, NUM_SAMPLES / amount);
 
-    (id.clone(), swarm_speed)
+    (*id, swarm_speed)
 }
 
 fn sized_pool_bencher(id: &mut usize, amount: u128) -> Speed {
@@ -305,5 +305,5 @@ fn sized_pool_bencher(id: &mut usize, amount: u128) -> Speed {
     let swarm_speed = (num_calls * amount as u128) as f64 / swarm_time;
     assert_eq!(num_calls, NUM_SAMPLES / amount);
 
-    (id.clone(), swarm_speed)
+    (*id, swarm_speed)
 }

@@ -6,5 +6,8 @@ edition = "2018"
 description = "Optimized object pooling system for Rust"
 readme = "README.md"
 license-file="License.txt"
+documentation="https://doc.rust-lang.org/cargo/reference/publishing.html"
+repository="https://github.com/Beardiegames/swarm"
+homepage="https://beardiegames.com/rust-libs/doc/swarm/"
 
 [dependencies]

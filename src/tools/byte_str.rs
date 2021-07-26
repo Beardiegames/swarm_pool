@@ -178,25 +178,22 @@ impl From<&str> for ByteStr {
         match bytes {
             b if b.len() <= 8 => { 
                 let mut array = [0; 8];
-                for i in 0..bytes.len() { array[i] = b[i]; } 
+                array[..bytes.len()].clone_from_slice(&b[..bytes.len()]);
                 ByteStr::Str8(array) 
             },
             b if b.len() <= 16 => { 
                 let mut array = [0; 16];
-                for i in 0..bytes.len() { array[i] = b[i]; } 
+                array[..bytes.len()].clone_from_slice(&b[..bytes.len()]);
                 ByteStr::Str16(array) 
             },
             b if b.len() <= 32 => { 
                 let mut array = [0; 32];
-                for i in 0..bytes.len() { array[i] = b[i]; } 
+                array[..bytes.len()].clone_from_slice(&b[..bytes.len()]);
                 ByteStr::Str32(array) 
             },
             _ => { 
                 let mut array = [0; 64];
-                for i in 0..bytes.len() { 
-                    if i < 64 { array[i] = bytes[i]; } 
-                    else { break; }
-                }
+                array[..bytes.len()].clone_from_slice(&bytes[..bytes.len()]);
                 ByteStr::Str64(array) 
             },          
         }
