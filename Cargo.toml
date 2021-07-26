@@ -1,5 +1,5 @@
 [package]
-name = "swarm"
+name = "swarm_pool"
 version = "0.1.0"
 authors = ["Thomas vanden Bighelaar <thomas@beardiegames.com>"]
 edition = "2018"

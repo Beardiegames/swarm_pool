@@ -5,9 +5,9 @@
 //! 
 //! # Examples
 //! ```
-//! extern crate swarm;
-//! use swarm::Swarm;
-//! use swarm::tools::byte_str::ByteStr;
+//! extern crate swarm_pool;
+//! use swarm_pool::Swarm;
+//! use swarm_pool::tools::byte_str::ByteStr;
 //! 
 //! // create an object you want to pool
 //! #[derive(Default, Copy, Clone)]     // The object you want to pool must implement these
@@ -58,9 +58,9 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    /// extern crate swarm;
-    /// use swarm::Swarm;
-    /// use swarm::tools::byte_str::ByteStr;
+    /// extern crate swarm_pool;
+    /// use swarm_pool::Swarm;
+    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
     /// // Swarm uses Copy and therfore only accepts Sized properties!
@@ -105,8 +105,8 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    ///     extern crate swarm;
-    ///     use swarm::{ Swarm, Spawn };
+    ///     extern crate swarm_pool;
+    ///     use swarm_pool::{ Swarm, Spawn };
     /// 
     ///     let mut swarm = Swarm::<u8, _>::new(10, ());
     ///     swarm.populate(&[5, 4, 3, 2, 1]);
@@ -145,9 +145,9 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    /// extern crate swarm;
-    /// use swarm::Swarm;
-    /// use swarm::tools::byte_str::ByteStr;
+    /// extern crate swarm_pool;
+    /// use swarm_pool::Swarm;
+    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
     /// #[derive(Default, Copy, Clone)] 
@@ -178,9 +178,9 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    /// extern crate swarm;
-    /// use swarm::Swarm;
-    /// use swarm::tools::byte_str::ByteStr;
+    /// extern crate swarm_pool;
+    /// use swarm_pool::Swarm;
+    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
     /// #[derive(Default, Copy, Clone)] 

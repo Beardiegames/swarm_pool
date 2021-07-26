@@ -42,8 +42,8 @@ pub trait StackPool <ItemType> {
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -81,9 +81,9 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -122,9 +122,9 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -153,8 +153,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -189,8 +189,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -214,8 +214,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -252,8 +252,8 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -282,8 +282,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -310,8 +310,8 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -356,8 +356,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -388,8 +388,8 @@ where   ItemType: Copy + PartialEq,
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -416,8 +416,8 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();
@@ -444,8 +444,8 @@ where
 /// 
 /// # Example
 /// ```
-/// use swarm::tools::sized_pool::SizedPool16;
-/// use swarm::tools::sized_pool;
+/// use swarm_pool::tools::sized_pool::SizedPool16;
+/// use swarm_pool::tools::sized_pool;
 /// 
 /// fn main() {
 ///     let mut pool: SizedPool16<u8> = SizedPool16::new();

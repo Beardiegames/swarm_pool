@@ -2,7 +2,7 @@
 //! 
 //! Examples
 //! ```
-//! use swarm::tools::byte_str::ByteStr;
+//! use swarm_pool::tools::byte_str::ByteStr;
 //! 
 //! let byte_str: ByteStr = ByteStr::from("test");
 //! assert_eq!(byte_str, "test");
@@ -17,7 +17,7 @@ use std::fmt;
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: ByteStr = ByteStr::from("test");
 /// assert_eq!(byte_str, "test");
@@ -35,7 +35,7 @@ impl ByteStr {
     /// 
     /// Examples
     /// ```
-    /// use swarm::tools::byte_str::ByteStr;
+    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// let byte_str: ByteStr = ByteStr::from("test");
     /// assert_eq!(byte_str, "test");
@@ -58,7 +58,7 @@ impl ByteStr {
     /// 
     /// Examples
     /// ```
-    /// use swarm::tools::byte_str::ByteStr;
+    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// let byte_str: ByteStr = ByteStr::from("test");
     /// assert_eq!(byte_str, "test");
@@ -103,7 +103,7 @@ impl fmt::Debug for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str_1: ByteStr = ByteStr::from("test");
 /// let byte_str_2: ByteStr = ByteStr::from("test");
@@ -125,7 +125,7 @@ impl PartialEq<ByteStr> for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: ByteStr = ByteStr::from("test");
 /// assert_eq!(byte_str, "test");
@@ -146,7 +146,7 @@ impl PartialEq<&str> for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: String = ByteStr::from("test").into();
 /// assert_eq!(byte_str, String::from("test"));
@@ -167,7 +167,7 @@ impl PartialEq<String> for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: ByteStr = ByteStr::from("test");
 /// assert_eq!(byte_str, "test");
@@ -204,7 +204,7 @@ impl From<&str> for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: ByteStr = ByteStr::from(String::from("test"));
 /// assert_eq!(byte_str, "test");
@@ -244,7 +244,7 @@ impl From<String> for ByteStr {
 /// 
 /// Examples
 /// ```
-/// use swarm::tools::byte_str::ByteStr;
+/// use swarm_pool::tools::byte_str::ByteStr;
 /// 
 /// let byte_str: ByteStr = ByteStr::from("test");
 /// let into_str: String = byte_str.into();

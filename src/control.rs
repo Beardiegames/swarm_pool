@@ -2,9 +2,9 @@
 //! 
 //! Example
 //! ```
-//!     extern crate swarm;
-//!     use swarm::{ Swarm, Spawn };
-//!     use swarm::tools::byte_str::ByteStr;
+//!     extern crate swarm_pool;
+//!     use swarm_pool::{ Swarm, Spawn };
+//!     use swarm_pool::tools::byte_str::ByteStr;
 //!     
 //!     // setup a custom swarm properties object use for data sharing
 //!     pub struct FollowSpawns {
@@ -130,8 +130,8 @@ where ItemType: Default + Copy {
     ///
     /// # Example
     /// ```
-    ///     extern crate swarm;
-    ///     use swarm::{ Swarm, Spawn };
+    ///     extern crate swarm_pool;
+    ///     use swarm_pool::{ Swarm, Spawn };
     /// 
     ///     let mut swarm = Swarm::<u8, _>::new(10, ());
     ///     swarm.populate(&[5, 4, 3, 2, 1]);
@@ -207,8 +207,8 @@ where ItemType: Default + Copy {
     /// 
     /// # Example
     /// ```
-    ///     extern crate swarm;
-    ///     use swarm::{ Swarm, Spawn };
+    ///     extern crate swarm_pool;
+    ///     use swarm_pool::{ Swarm, Spawn };
     /// 
     ///     let mut swarm = Swarm::<u8, _>::new(10, ());
     ///     let spawn = &swarm.spawn().unwrap();
@@ -256,8 +256,8 @@ where ItemType: Default + Copy {
     /// 
     /// # Example
     /// ```
-    ///     extern crate swarm;
-    ///     use swarm::{ Swarm, Spawn };
+    ///     extern crate swarm_pool;
+    ///     use swarm_pool::{ Swarm, Spawn };
     /// 
     ///     let mut swarm = Swarm::<u8, _>::new(10, ());
     ///     let spawn = &swarm.spawn().unwrap();

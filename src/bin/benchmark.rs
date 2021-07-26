@@ -3,10 +3,10 @@
 use std::cmp::Ordering;
 use std::io::Write;
 
-extern crate swarm;
-use swarm::Swarm;
-use swarm::tools::sized_pool::SizedPool1024;
-use swarm::tools::sized_pool;
+extern crate swarm_pool;
+use swarm_pool::Swarm;
+use swarm_pool::tools::sized_pool::SizedPool1024;
+use swarm_pool::tools::sized_pool;
 
 // test mockup objects
 
