@@ -17,6 +17,11 @@ pub type SpawnId = usize;
 /// the for_each() loop is currently iterating over.
 pub type ForEachHandler<ItemType> = fn(&mut ItemType);
 
+/// A callback handler used by the for_each() methode on Swarm.
+/// Return a mutable reference of a data object in the pool that 
+/// the for_each() loop is currently iterating over.
+pub type EnumerateHandler<ItemType> = fn(&usize, &mut ItemType);
+
 /// A callback handler used by the for_all() methode on Swarm.
 /// Returns the object position, a mutable pool reference and the swarm properties  
 /// the for_all() loop is currently iterating over.

@@ -1,45 +1,224 @@
-//! Controling a swarm during the swarm.update() loop
+//! Controling the swarm inside its own swarm.update() loop
+//! 
+//! Example
+//! ```
+//!     extern crate swarm;
+//!     use swarm::{ Swarm, Spawn };
+//!     use swarm::tools::byte_str::ByteStr;
+//!     
+//!     // setup a custom swarm properties object use for data sharing
+//!     pub struct FollowSpawns {
+//!         john: Option<Spawn>,
+//!         cristy: Option<Spawn>,
+//!     }
+//!
+//!     // setup a custom pool data object
+//!     #[derive(Default, Copy, Clone)]
+//!     pub struct Minion {
+//!         name: ByteStr,
+//!         value: usize,
+//!     }
+//!
+//!     // create a new swarm using the custom data and property types
+//!     let mut swarm = Swarm::<Minion, FollowSpawns>::new(10, FollowSpawns {
+//!         john: None,
+//!         cristy: None,
+//!     });
+//!     
+//!     // create two new spawns
+//!     let s_john = swarm.spawn().unwrap();
+//!     let s_cristy = swarm.spawn().unwrap();
+//!
+//!     // duplicate the spawn references into the swarm properties object
+//!     swarm.properties.john = Some(s_john.mirror());
+//!     swarm.properties.cristy = Some(s_cristy.mirror());
+//!
+//!     // set the name fields
+//!     swarm.fetch(&s_john).name = ByteStr::from("John");
+//!     swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
+//!
+//!     // loop over all spawns
+//!     swarm.update(|ctl| {
+//!         let name = ctl.target().name;
+//!     
+//!         // get spawn references from the swarm properties
+//!         let cristy = ctl.properties.cristy.as_ref().unwrap().mirror();
+//!         let john = ctl.properties.john.as_ref().unwrap().mirror();
+//!         
+//!         // if the currently updating pool object is john
+//!         if name == "John" { 
+//!             // john tells critsy to have a value of 2
+//!             ctl.fetch(&cristy).value = 2; 
+//!         }
+//!         // if the currently updating pool object is Cristy
+//!         if name == "Cristy" { 
+//!             // cristy tells john to have a value of 1
+//!             ctl.fetch(&john).value = 1; 
+//!         }
+//!     });
+//!
+//!     assert_eq!(swarm.fetch_ref(&s_john).value, 1);
+//!     assert_eq!(swarm.fetch_ref(&s_cristy).value, 2);
+//! ```
 
 use super::types::*;
 
-pub struct SwarmControl<'a, T, P> {
+/// SwarmControl is passed as a parameter to the UpdateHandler during the 
+/// swarm.update() loop. The Swarm Control object holds references to swarm pooling
+/// values, this makes it possible to make changes to the swarm pool inside the 
+/// update loop, without having to move Swarm out of itself. 
+pub struct SwarmControl<'a, ItemType, Properties> {
     pub(crate) max: &'a usize,
     pub(crate) spawns: &'a mut Vec<Spawn>,
     pub(crate) free: &'a mut Vec<Spawn>,
-    pub(crate) len: usize,
     pub(crate) order: &'a mut Vec<usize>,
-    pub(crate) pos: usize,
+
+    pub(crate) len: usize,
+    pub(crate) pos: usize, // the pool index of the currently updating spawn
     
-    pub pool: &'a mut Vec<T>,
-    pub properties: &'a mut P,
+    pub pool: &'a mut Vec<ItemType>,
+    pub properties: &'a mut Properties,
 }
 
-impl<'a, T: Default + Copy, P> SwarmControl<'a, T, P> {
+impl<'a, ItemType, Properties> SwarmControl<'a, ItemType, Properties> 
+where ItemType: Default + Copy {
 
-    pub fn target(&mut self) -> &mut T {
+    /// Returns a mutable reference to the pool object that is currently being updated
+    pub fn target(&mut self) -> &mut ItemType {
         &mut self.pool[self.pos]
     }
 
+    /// Returns a Spawn that is linked to the current pool object being updated
     pub fn target_spawn(&self) -> Spawn {
         self.spawns[self.pos].mirror()
     }
 
+    /// Returns the ObjectPosition, or pool index, where the currently updating pool
+    /// object is located at this moment (pool position can change over time).
     pub fn head(&self) -> ObjectPosition {
         self.order[self.pos]
     }
 
-    pub fn fetch(&mut self, pos: &ObjectPosition) -> &mut T {
-        &mut self.pool[*pos]
-    }
-
-    pub fn spawn_at(&self, pos: &ObjectPosition) -> Spawn {
+    /// Returns a spawn reference object from an object position within the pool
+    pub fn fetch_spawn(&self, pos: &ObjectPosition) -> Spawn {
         self.spawns[*pos].mirror()
     }
 
-    pub fn kill_current(&mut self) {
-        self.kill(&self.spawns[self.pos].mirror())
+    /// Returns a mutable reference to an object from the Swarm pool.
+    /// The supplied Spawn reference object points out which object to return.
+    pub fn fetch(&mut self, spawn: &Spawn) -> &mut ItemType { 
+        &mut self.pool[spawn.0.borrow().pos]
     }
 
+    /// Returns a immutable reference to an object from the Swarm pool.
+    /// The supplied Spawn reference object points out which object to return.
+    pub fn fetch_ref(&self, spawn: &Spawn) -> &ItemType { 
+        &self.pool[spawn.0.borrow().pos]
+    }
+
+    /// Returns the number of spawned instances currently availeble
+    pub fn count(&self) -> usize { self.len }
+
+    /// Returns the maximum number of instances that can be spawned
+    pub fn capacity(&self) -> usize { self.max.clone() }
+
+    /// Loop through spawned instances until the `predicate` callback returns true.
+    /// 
+    /// If the loop was interupted by the predicate it returns a Spawn that refers
+    /// that pool object.
+    /// If on all iterations of the loop the `predicate` was false, None will be returned. 
+    ///
+    /// # Example
+    /// ```
+    ///     extern crate swarm;
+    ///     use swarm::{ Swarm, Spawn };
+    /// 
+    ///     let mut swarm = Swarm::<u8, _>::new(10, ());
+    ///     swarm.populate(&[5, 4, 3, 2, 1]);
+    /// 
+    ///     assert_eq!(swarm.count(), 5);
+    ///     
+    ///     swarm.update(|ctl| {
+    ///         if let Some(spawn) = ctl.find(|p| *p == 2) {
+    ///             assert_eq!(spawn.pos(), 3);
+    ///             assert_eq!(*ctl.fetch(&spawn), 2);
+    ///         } else {
+    ///             panic!("Spawn not found!");
+    ///         }
+    ///     });
+    ///```
+    pub fn find<Predicate> (&self, predicate: Predicate) -> Option<Spawn> 
+    where Predicate: Fn(&ItemType) -> bool {
+        let count = self.len;
+        let i = &mut 0;
+
+        while *i < count {
+            if predicate(&self.pool[self.order[*i]]) { 
+                return Some(self.spawns[*i].mirror());
+            }
+            *i += 1;
+        }
+        return None
+    }
+
+    /// Loop through spawned instances until the `predicate` callback returns false.
+    /// 
+    /// If the loop was interupted by a false predicate it returns a Spawn that refers
+    /// that pool object. If on all iterations of the loop the `predicate` was true, 
+    /// None will be returned.
+    /// 
+    /// This methode functions in the opposite way as the find methode.
+    pub fn for_while<Predicate> (&self, predicate: Predicate) -> Option<Spawn> 
+    where Predicate: Fn(&ItemType) -> bool {
+        let count = self.len;
+        let i = &mut 0;
+
+        while *i < count {
+            if predicate(&self.pool[self.order[*i]]) { 
+                return Some( self.spawns[*i].mirror());
+            }
+            *i += 1;
+        }
+        return None
+    }
+
+    /// Loop through all spawned instances and edit them.
+    /// 
+    /// This methode functions the same as the Swarm.for_each() methode.
+    pub fn for_each(&mut self, handler: ForEachHandler<ItemType>) {
+        let count = self.len;
+        let i = &mut 0;
+
+        while *i < count {
+            handler(&mut self.pool[self.order[*i]]);
+            *i += 1;
+        }
+    }
+
+    /// Create a new pool instance an returns a linked Spawn reference.
+    /// Spawns are pool instances that will be included in the update loops 
+    /// provided by Swarm, as long as they are active and not killed yet.
+    /// 
+    /// Returns None if the pool reached it's maximum capacity and 
+    /// therefore could not spawn new instances
+    /// 
+    /// **NOTE**: Spawns created by SwarmControl will be included the next time 
+    /// Swarm.update() is called.
+    /// 
+    /// # Example
+    /// ```
+    ///     extern crate swarm;
+    ///     use swarm::{ Swarm, Spawn };
+    /// 
+    ///     let mut swarm = Swarm::<u8, _>::new(10, ());
+    ///     let spawn = &swarm.spawn().unwrap();
+    ///     assert_eq!(swarm.count(), 1);
+    ///     
+    ///     swarm.update(|ctl| {
+    ///         if ctl.head() == 0 { ctl.spawn();} 
+    ///     });
+    ///     assert_eq!(swarm.count(), 2);
+    ///```
     pub fn spawn(&mut self) -> Option<Spawn> {
         if self.len < *self.max {
 
@@ -65,6 +244,31 @@ impl<'a, T: Default + Copy, P> SwarmControl<'a, T, P> {
         }
     }
 
+    /// Remove the currently updating spawn instance, see SwarmControl.kill()
+    pub fn kill_current(&mut self) {
+        self.kill(&self.target_spawn())
+    }
+
+    /// Remove a spawn instance from the swarm pool update loops
+    /// 
+    /// **NOTE**: Spawns killed by SwarmControl will be excluded the next time 
+    /// Swarm.update() is called.
+    /// 
+    /// # Example
+    /// ```
+    ///     extern crate swarm;
+    ///     use swarm::{ Swarm, Spawn };
+    /// 
+    ///     let mut swarm = Swarm::<u8, _>::new(10, ());
+    ///     let spawn = &swarm.spawn().unwrap();
+    ///     assert_eq!(swarm.count(), 1);
+    ///         
+    ///     swarm.update(|ctl| {
+    ///         let spawn = ctl.target_spawn();
+    ///         if ctl.head() == 0 { ctl.kill(&spawn); }
+    ///     });
+    ///     assert_eq!(swarm.count(), 0);
+    ///```
     pub fn kill(&mut self, target: &Spawn) {
         target.0.borrow_mut().active = false;
     
@@ -84,7 +288,7 @@ impl<'a, T: Default + Copy, P> SwarmControl<'a, T, P> {
             self.spawns[target_pos] = self.spawns[last_pos].mirror();
             self.spawns[last_pos] = target.mirror();
     
-            // set swapped spawn values to point to their own location
+            // set swapped spawn pool pointer to point to their new location
             self.spawns[target_pos].0.borrow_mut().pos = target_pos;
             self.spawns[last_pos].0.borrow_mut().pos = last_pos;
     

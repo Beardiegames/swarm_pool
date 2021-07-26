@@ -235,11 +235,11 @@ fn update_cross_referencing() {
 
         // john tells critsy to have a value of 2
         if name == "John" { 
-            ctx.fetch(&cristy.pos()).value = 2; 
+            ctx.fetch(&cristy).value = 2; 
         }
         // cristy tells john to have a value of 1
         if name == "Cristy" { 
-            ctx.fetch(&john.pos()).value = 1; 
+            ctx.fetch(&john).value = 1; 
         }
     });
 
@@ -316,7 +316,7 @@ fn killing_spawns_during_update_loop() {
     //     println!("PRE-KILL: {:?}", ctx.fetch_spawn());
     // });
     swarm.update(|ctx| {
-        if ctx.target_spawn().id() == 2 { ctx.kill(&ctx.spawn_at(&0)); }
+        if ctx.target_spawn().id() == 2 { ctx.kill(&ctx.fetch_spawn(&0)); }
     });
     // swarm.update(|ctx| {
     //     println!("POST-KILL: {:?}", ctx.fetch_spawn());

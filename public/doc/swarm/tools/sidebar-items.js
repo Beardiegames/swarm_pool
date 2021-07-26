@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["byte_str","Sized byte string with predefined sizes of 8, 16, 32 or 64 characters/bytes"],["sized_pool","A set of Sized pools that can be use kindof like a sizable Array or Vec."]]});

@@ -32,7 +32,7 @@ pub mod types;
 pub mod tools;
 
 use control::SwarmControl;
-use types::*;
+pub use types::*;
 
 /// The actual Swarm pool
 pub struct Swarm<ItemType, Properties> {
@@ -100,6 +100,27 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
             properties,
         }
     }
+    /// Create a new spawn for every item in the `items` list and gives
+    /// it that value.
+    /// 
+    /// # Example
+    /// ```
+    ///     extern crate swarm;
+    ///     use swarm::{ Swarm, Spawn };
+    /// 
+    ///     let mut swarm = Swarm::<u8, _>::new(10, ());
+    ///     swarm.populate(&[5, 4, 3, 2, 1]);
+    ///     
+    ///     assert_eq!(swarm.count(), 5);
+    ///     assert_eq!(*swarm.fetch_raw(&0), 5);
+    /// ```
+    pub fn populate(&mut self, items: &[ItemType]) {
+        for item in items {
+            if let Some(s) = self.spawn() {
+                *self.fetch(&s) = *item;
+            }
+        }
+    }
     
     pub(crate) fn control(&mut self) -> SwarmControl<ItemType, Properties> {
         SwarmControl {
@@ -116,7 +137,11 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     }
 
     /// Create a new pool instance. 
-    /// Spawns are included in the update loop provided by Swarm
+    /// Spawns are pool instances that will be included in the update loops 
+    /// provided by Swarm, as long as they are active and not killed yet.
+    /// 
+    /// Returns None if the pool reached it's maximum capacity and 
+    /// therefore could not spawn new instances
     /// 
     /// # Example
     /// ```
@@ -143,13 +168,13 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// }
     /// ```
     pub fn spawn(&mut self) -> Option<Spawn> {
-        let mut ctx = self.control();
-        let result = ctx.spawn();
-        self.len = ctx.len;
+        let mut ctl = self.control();
+        let result = ctl.spawn();
+        self.len = ctl.len;
         result
     }
 
-    /// Remove a spawn from the swarm pool
+    /// Remove a spawn instance from the swarm pool update loops
     /// 
     /// # Example
     /// ```
@@ -179,15 +204,15 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// }
     /// ```
     pub fn kill(&mut self, target: &Spawn) {
-        let mut ctx = self.control();
+        let mut ctl = self.control();
         let reset_order = target.pos();
-        ctx.kill(target);
-        self.len = ctx.len;
+        ctl.kill(target);
+        self.len = ctl.len;
         self.order[reset_order] = reset_order;
     }
 
     /// Returns a spawn reference object from an object position within the pool
-    pub fn find_spawn(&self, pos: &ObjectPosition) -> Spawn {
+    pub fn fetch_spawn(&self, pos: &ObjectPosition) -> Spawn {
         self.spawns[*pos].mirror()
     }
 
@@ -221,6 +246,19 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     
 
     // update iterators
+
+    /// Loops through all spawned instances and returns them via a callback
+    /// handler. The callback handler is supplied with a mutable reference of these
+    /// instances so that the object data of each looped instance can be changed.
+    pub fn enumerate(&mut self, handler: EnumerateHandler<ItemType>) {
+        let len = self.len;
+        let mut i = 0;
+
+        while &i < &len {
+            handler(&i, &mut self.pool[i]);
+            i += 1;
+        }
+    }
 
     /// Loops through all spawned instances and returns them via a callback
     /// handler. The callback handler is supplied with a mutable reference of these
@@ -259,17 +297,19 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// 
     /// NOTE: This methode is slower then the other loops, but gives you full control over
     /// the swarm.
+    /// 
+    /// 
     pub fn update(&mut self, handler: UpdateHandler<ItemType, Properties>) {
         let mut i = 0;
         let len = self.len;
-        let mut ctx = self.control();
+        let mut ctl = self.control();
 
         while &i < &len {
-            ctx.pos = ctx.order[*&i];
-            handler(&mut ctx);
-            ctx.order[*&i] = i; 
+            ctl.pos = ctl.order[*&i];
+            handler(&mut ctl);
+            ctl.order[*&i] = i; 
             i += 1;
         }
-        self.len = ctx.len;
+        self.len = ctl.len;
     }
 }
