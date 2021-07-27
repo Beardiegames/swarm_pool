@@ -5,6 +5,7 @@ use super::*;
 const CAPACITY: usize = 512;
 
 /// Sized pool object with a max capacity of 512 items.
+#[derive(Copy, Clone)]
 pub struct SizedPool512<ItemType> { 
     items: [Option<ItemType>; CAPACITY], 
     order: [usize; CAPACITY], 
@@ -75,6 +76,14 @@ where ItemType: Copy + PartialEq
     #[allow(unused)]
     pub(crate) fn get_ref(&self, position: &usize) -> &Option<ItemType> {
         &self.items[self.order[*position]]
+    }
+}
+
+impl<ItemType> Default for SizedPool512<ItemType> 
+where ItemType: Copy + PartialEq
+{
+    fn default() -> Self {
+        SizedPool512::<ItemType>::new()
     }
 }
 
