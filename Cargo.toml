@@ -1,13 +1,13 @@
 [package]
 name = "swarm_pool"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Thomas vanden Bighelaar <thomas@beardiegames.com>"]
 edition = "2018"
 description = "Optimized object pooling system for Rust"
 readme = "README.md"
 license-file="License.txt"
-documentation="https://beardiegames.com/rust-libs/doc/swarm/"
+documentation="https://beardiegames.com/rust-libs/doc/swarm_pool/"
 repository="https://github.com/Beardiegames/swarm"
-homepage="https://beardiegames.com/rust-libs/doc/swarm/"
+homepage="https://beardiegames.com/rust-libs/doc/swarm_pool/"
 
 [dependencies]
