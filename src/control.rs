@@ -150,13 +150,13 @@ where ItemType: Default + Copy {
     pub fn find<Predicate> (&self, predicate: Predicate) -> Option<Spawn> 
     where Predicate: Fn(&ItemType) -> bool {
         let count = self.len;
-        let i = &mut 0;
+        let mut i = 0;
 
-        while *i < count {
-            if predicate(&self.pool[self.order[*i]]) { 
-                return Some(self.spawns[*i].mirror());
+        while &i < &count {
+            if predicate(&self.pool[self.order[i]]) { 
+                return Some(self.spawns[i].mirror());
             }
-            *i += 1;
+            i += 1;
         }
         return None
     }
@@ -171,27 +171,57 @@ where ItemType: Default + Copy {
     pub fn for_while<Predicate> (&self, predicate: Predicate) -> Option<Spawn> 
     where Predicate: Fn(&ItemType) -> bool {
         let count = self.len;
-        let i = &mut 0;
+        let mut i = 0;
 
-        while *i < count {
-            if predicate(&self.pool[self.order[*i]]) { 
-                return Some( self.spawns[*i].mirror());
+        while &i < &count {
+            if predicate(&self.pool[self.order[i]]) { 
+                return Some( self.spawns[i].mirror());
             }
-            *i += 1;
+            i += 1;
         }
         return None
     }
+
+    /// Loops through all spawned instances and returns them via a callback
+    /// handler. The callback handler is supplied with a mutable reference of these
+    /// instances so that the object data of each looped instance can be changed.
+    ///
+    /// This methode functions the same as the Swarm.enumerate() methode.
+    pub fn enumerate(&mut self, handler: EnumerateHandler<ItemType>) {
+        let len = self.len;
+        let mut i = 0;
+
+        while &i < &len {
+            handler(&i, &mut self.pool[i]);
+            i += 1;
+        }
+    }
+
 
     /// Loop through all spawned instances and edit them.
     /// 
     /// This methode functions the same as the Swarm.for_each() methode.
     pub fn for_each(&mut self, handler: ForEachHandler<ItemType>) {
         let count = self.len;
-        let i = &mut 0;
+        let mut i = 0;
 
-        while *i < count {
-            handler(&mut self.pool[self.order[*i]]);
-            *i += 1;
+        while &i < &count {
+            handler(&mut self.pool[self.order[i]]);
+            i += 1;
+        }
+    }
+
+    /// Loops through all spawned instances and returns their object position via a 
+    /// callback handler
+    /// 
+    /// This methode functions the same as the Swarm.for_all() methode.
+    pub fn for_all(&mut self, handler: ForAllHandler<ItemType, Properties>) {
+        let len = self.len;
+        let mut i = 0;
+
+        while &i < &len {
+            handler(&i, &mut self.pool, &mut self.properties);
+            i += 1;
         }
     }
 
