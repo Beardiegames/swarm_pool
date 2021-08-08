@@ -1,6 +1,6 @@
 [package]
 name = "swarm_pool"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Thomas vanden Bighelaar <thomas@beardiegames.com>"]
 edition = "2018"
 description = "Optimized object pooling system for Rust"
