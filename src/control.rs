@@ -4,7 +4,6 @@
 //! ```
 //!     extern crate swarm_pool;
 //!     use swarm_pool::{ Swarm, Spawn };
-//!     use swarm_pool::tools::byte_str::ByteStr;
 //!     
 //!     // setup a custom swarm properties object use for data sharing
 //!     pub struct FollowSpawns {
@@ -13,9 +12,9 @@
 //!     }
 //!
 //!     // setup a custom pool data object
-//!     #[derive(Default, Copy, Clone)]
+//!     #[derive(Default, Clone)]
 //!     pub struct Minion {
-//!         name: ByteStr,
+//!         name: &'static str,
 //!         value: usize,
 //!     }
 //!
@@ -34,8 +33,8 @@
 //!     swarm.properties.cristy = Some(s_cristy.mirror());
 //!
 //!     // set the name fields
-//!     swarm.fetch(&s_john).name = ByteStr::from("John");
-//!     swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
+//!     swarm.fetch(&s_john).name = "John";
+//!     swarm.fetch(&s_cristy).name = "Cristy";
 //!
 //!     // loop over all spawns
 //!     swarm.update(|ctl| {
@@ -81,7 +80,7 @@ pub struct SwarmControl<'a, ItemType, Properties> {
 }
 
 impl<'a, ItemType, Properties> SwarmControl<'a, ItemType, Properties> 
-where ItemType: Default + Copy {
+where ItemType: Default + Clone {
 
     /// Returns a mutable reference to the pool object that is currently being updated
     pub fn target(&mut self) -> &mut ItemType {
@@ -307,8 +306,8 @@ where ItemType: Default + Copy {
     
         if self.len > 1 && target_pos < last_pos {
             
-            let last_val = self.pool[last_pos];
-            let target_val = self.pool[target_pos];
+            let last_val = self.pool[last_pos].clone();
+            let target_val = self.pool[target_pos].clone();
     
             // swap content to back
             self.pool[target_pos] = last_val;

@@ -3,7 +3,7 @@
 #[cfg(test)]
 use crate::*;
 use crate::{ Spawn };
-use crate::tools::byte_str::ByteStr;
+//use crate::tools::byte_str::ByteStr;
 
 // sest values
 
@@ -18,7 +18,7 @@ pub struct TrackSpawns {
 
 #[derive(Default, Copy, Clone)]
 pub struct Minion {
-    name: ByteStr,
+    name: &'static str,
     value: usize,
 }
 
@@ -148,19 +148,19 @@ fn forall_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.fetch(&s_john).name = ByteStr::from("John");
-    swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
+    swarm.fetch(&s_john).name = "John";
+    swarm.fetch(&s_cristy).name = "Cristy";
 
     swarm.for_all(|index, list, props| {
 
         // john tells critsy to have a value of 2
-        if list[*index].name == ByteStr::from("John") { 
+        if list[*index].name == "John" { 
             if let Some(cristy) = &props.cristy {
                 list[cristy.pos()].value = 2; 
             }
         }
         // cristy tells john to have a value of 1
-        if list[*index].name == ByteStr::from("Cristy") { 
+        if list[*index].name == "Cristy" { 
             if let Some(john) = &props.john {
                 list[john.pos()].value = 1; 
             }
@@ -225,8 +225,8 @@ fn update_cross_referencing() {
     swarm.properties.john = Some(s_john.mirror());
     swarm.properties.cristy = Some(s_cristy.mirror());
 
-    swarm.fetch(&s_john).name = ByteStr::from("John");
-    swarm.fetch(&s_cristy).name = ByteStr::from("Cristy");
+    swarm.fetch(&s_john).name = "John";
+    swarm.fetch(&s_cristy).name = "Cristy";
 
     swarm.update(|ctx| {
         let name = ctx.target().name;

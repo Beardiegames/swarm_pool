@@ -5,8 +5,8 @@ use std::io::Write;
 
 extern crate swarm_pool;
 use swarm_pool::Swarm;
-use swarm_pool::tools::sized_pool::SizedPool1024;
-use swarm_pool::tools::sized_pool;
+//use swarm_pool::tools::sized_pool::SizedPool1024;
+//use swarm_pool::tools::sized_pool;
 
 // test mockup objects
 
@@ -43,7 +43,7 @@ const NUM_SAMPLES: u128 = 2_000_000_000;
 
 fn main() {
     let mut run_id: usize = 0;
-    let (vec_bn1, for_h_bn1, upd_h_bn1, upc_h_bn1, pool_bench) = bench_with_objects(&mut run_id);
+    let (vec_bn1, for_h_bn1, upd_h_bn1, upc_h_bn1) = bench_with_objects(&mut run_id);
 
     println!("# RESULTS TOTAL:");
 
@@ -60,7 +60,7 @@ fn main() {
     print_result(&vec_bn1, &for_h_bn1, "swarm.for_each()"); 
     print_result(&vec_bn1, &upd_h_bn1, "swarm.for_all()"); 
     print_result(&vec_bn1, &upc_h_bn1, "swarm.update()"); 
-    print_result(&vec_bn1, &pool_bench, "pool::for_each()"); 
+    //print_result(&vec_bn1, &pool_bench, "pool::for_each()"); 
 
 }
 
@@ -79,12 +79,12 @@ fn print_result(baseline: &Bench, test_bench: &Bench, descript: &str) {
         (vmax.1 / 1_000_000.0).round(), vmax.0);
 }
 
-fn bench_with_objects(run_id: &mut usize) -> (Bench, Bench, Bench, Bench, Bench) {
+fn bench_with_objects(run_id: &mut usize) -> (Bench, Bench, Bench, Bench) { //}, Bench) {
     
-    let (v_spd1, fh_spd1, uh_spd1, ch_spd1, p_spd1) = bench_with(run_id, 1);
-    let (v_spd2, fh_spd2, uh_spd2, ch_spd2, p_spd2) = bench_with(run_id, 10);
-    let (v_spd3, fh_spd3, uh_spd3, ch_spd3, p_spd3) = bench_with(run_id, 100);
-    let (v_spd4, fh_spd4, uh_spd4, ch_spd4, p_spd4) = bench_with(run_id, 1_000);
+    let (v_spd1, fh_spd1, uh_spd1, ch_spd1) = bench_with(run_id, 1);
+    let (v_spd2, fh_spd2, uh_spd2, ch_spd2) = bench_with(run_id, 10);
+    let (v_spd3, fh_spd3, uh_spd3, ch_spd3) = bench_with(run_id, 100);
+    let (v_spd4, fh_spd4, uh_spd4, ch_spd4) = bench_with(run_id, 1_000);
   
     println!("--");
     (   
@@ -92,13 +92,13 @@ fn bench_with_objects(run_id: &mut usize) -> (Bench, Bench, Bench, Bench, Bench)
         Bench (vec![fh_spd1, fh_spd2, fh_spd3, fh_spd4]),
         Bench (vec![uh_spd1, uh_spd2, uh_spd3, uh_spd4]),
         Bench (vec![ch_spd1, ch_spd2, ch_spd3, ch_spd4]),
-        Bench (vec![p_spd1, p_spd2, p_spd3, p_spd4]),
+        //Bench (vec![p_spd1, p_spd2, p_spd3, p_spd4]),
     )
 }
 
 type Speed = (usize, f64);
 
-fn bench_with(run_id: &mut usize, objects: u128) -> (Speed, Speed, Speed, Speed, Speed) {
+fn bench_with(run_id: &mut usize, objects: u128) -> (Speed, Speed, Speed, Speed) {
     let fn_avg = |x: f64, vec: f64| (100.0 * x / vec).round();
 
     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -128,15 +128,15 @@ fn bench_with(run_id: &mut usize, objects: u128) -> (Speed, Speed, Speed, Speed,
         let avg = fn_avg(uct_h_spd.1, vec_spd.1);
         println!("{}M calls/s({}%) @ {}M upd/s", m_calls, avg, m_calls / objects as f64);
     } 
-    let pool_spd = sized_pool_bencher(run_id, objects);
-    {
-        let m_calls = (pool_spd.1 / 1_000_000.0).round();
-        let avg = fn_avg(pool_spd.1, vec_spd.1);
-        println!("{}M calls/s({}%) @ {}M upd/s", m_calls, avg, m_calls / objects as f64);
-    }
+    // let pool_spd = sized_pool_bencher(run_id, objects);
+    // {
+    //     let m_calls = (pool_spd.1 / 1_000_000.0).round();
+    //     let avg = fn_avg(pool_spd.1, vec_spd.1);
+    //     println!("{}M calls/s({}%) @ {}M upd/s", m_calls, avg, m_calls / objects as f64);
+    // }
     
 
-    (vec_spd, for_h_spd, upd_h_spd, uct_h_spd, pool_spd)
+    (vec_spd, for_h_spd, upd_h_spd, uct_h_spd) //, pool_spd)
 }
 
 struct Bench(Vec<Speed>);
@@ -280,30 +280,30 @@ fn update_heap_bencher(id: &mut usize, amount: u128) -> Speed {
     (*id, swarm_speed)
 }
 
-fn sized_pool_bencher(id: &mut usize, amount: u128) -> Speed {
-    *id += 1;
-    print!("{}: pool::for_each() bench with {} object(s).. ", id, amount);
-    #[allow(unused_must_use)] { std::io::stdout().flush(); }
+// fn sized_pool_bencher(id: &mut usize, amount: u128) -> Speed {
+//     *id += 1;
+//     print!("{}: pool::for_each() bench with {} object(s).. ", id, amount);
+//     #[allow(unused_must_use)] { std::io::stdout().flush(); }
 
-    // get swarm ecs system speed
-    let mut pool: SizedPool1024<Summon> = SizedPool1024::new();
+//     // get swarm ecs system speed
+//     let mut pool: SizedPool1024<Summon> = SizedPool1024::new();
 
-    for _e in 0..amount { 
-       sized_pool::push(&mut pool, Summon::default());
-    }
+//     for _e in 0..amount { 
+//        sized_pool::push(&mut pool, Summon::default());
+//     }
 
-    // run bench loop
-    let now = std::time::SystemTime::now();
-    for _j in 0..NUM_SAMPLES/amount { 
-        sized_pool::for_each(&mut pool, |obj| obj.calls += 1);
-    }
-    let elapsed_res = now.elapsed();
+//     // run bench loop
+//     let now = std::time::SystemTime::now();
+//     for _j in 0..NUM_SAMPLES/amount { 
+//         sized_pool::for_each(&mut pool, |obj| obj.calls += 1);
+//     }
+//     let elapsed_res = now.elapsed();
 
-    // swarm test results
-    let swarm_time = elapsed_res.unwrap().as_secs_f64();
-    let num_calls = sized_pool::get_ref(&pool, 0).unwrap().calls;
-    let swarm_speed = (num_calls * amount as u128) as f64 / swarm_time;
-    assert_eq!(num_calls, NUM_SAMPLES / amount);
+//     // swarm test results
+//     let swarm_time = elapsed_res.unwrap().as_secs_f64();
+//     let num_calls = sized_pool::get_ref(&pool, 0).unwrap().calls;
+//     let swarm_speed = (num_calls * amount as u128) as f64 / swarm_time;
+//     assert_eq!(num_calls, NUM_SAMPLES / amount);
 
-    (*id, swarm_speed)
-}
+//     (*id, swarm_speed)
+// }

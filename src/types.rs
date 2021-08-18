@@ -79,8 +79,27 @@ impl PartialEq for Spawn {
     }
 }
 
+/// Implements default so it can be used as a property in PoolObjects.
+/// A Spawn shouls always point to an object, so in reality Spawn cannot have a default value.
+/// Allthough it is implemented default should NOT be used.
+impl Default for Spawn {
+    fn default() -> Self {
+        Spawn( Rc::new( RefCell::new( Tag::default() )))
+    }
+}
+
+/// Implements clone for ease of use, and use as a property in PoolObjects.
+/// Allthough this makes the mirror function obsolete, support for mirror shall be contiued. 
+/// This because the name mirror tells use that there is more going on than just cloning 
+/// (in this case Reference Counting). 
+impl Clone for Spawn {
+    fn clone(&self) -> Self {
+        self.mirror()
+    }
+}
+
 /// Tags hold Spawn data, and since A spawn is a Refence Counted Tag, that makes a Tag kind of an abstract Spawn
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct Tag {
     pub(crate) id: SpawnId,
     pub(crate) pos: ObjectPosition,

@@ -4,25 +4,19 @@
 //! and provides update loops to iterate over them.
 //! 
 //! In order to create a new swarm pool, you need to define what your `pool object` and `swarm properties` types
-//! are going to look like. Your `pool object` must at leas implement the Default, Copy and Clone traits 
+//! are going to look like. Your `pool object` must at leas implement the Default and Clone traits 
 //! from the standard library. The `swarm properties`, on the other hand, does not depend on any traits.
-//! Swarm uses Copy and therfore only accepts Sized properties, this means types such as String and Vec aren't allowed.
-//! This is where the tools module comes in handy, it provides a few tools that deal with this.
-//! The tools have not been optimized for performance and use, but is there to get you started. There are other libraries 
-//! specifically designed to deal with sized object types, consider using these instead of the tools module.
 //! 
 //! # Basic swarm setup example
 //! ```
 //! extern crate swarm_pool;
 //! use swarm_pool::Swarm;
-//! use swarm_pool::tools::sized_pool::SizedPool16;
 //! 
 //! // create an object you want to pool
-//! #[derive(Default, Copy, Clone)]     
-//! pub struct MyPoolObject {           // Swarm uses Copy and therfore only accepts Sized properties!
-//!     pub name: &static str,          // This means types such as String and Vec aren't allowed
-//!     pub value: usize,               // The tools module has a few tools that deal with this
-//!     pub list: SizedPool16<u8>,      // SizedPool is a sized array that can hold upto 16 items.
+//! #[derive(Default, Clone)]     
+//! pub struct MyPoolObject { 
+//!     pub name: &'static str,
+//!     pub value: usize,               
 //! }
 //! 
 //! // create properties you want to share with pooled objects
@@ -44,13 +38,11 @@
 //! ```
 //! # extern crate swarm_pool;
 //! # use swarm_pool::Swarm;
-//! # use swarm_pool::tools::sized_pool::SizedPool16;
 
-//! # #[derive(Default, Copy, Clone)]     // The object you want to pool must implement these
-//! # pub struct MyPoolObject {           // Swarm uses Copy and therfore only accepts Sized properties!
-//! #     pub name: &static str,          // This means types such as String and Vec aren't allowed
-//! #     pub value: usize,               // The tools module has a few tools that deal with this
-//! #     pub list: SizedPool16<u8>,      // for example SizedPool is a sized array that can hold upto 16 items.
+//! # #[derive(Default, Clone)]
+//! # pub struct MyPoolObject {      
+//! #     pub name: &'static str,     
+//! #     pub value: usize,    
 //! # }
 
 //! let mut swarm = Swarm::<MyPoolObject, _>::new(10, ());
@@ -76,14 +68,12 @@
 //! # Cross referencing using for_all & update
 //! ```
 //! # extern crate swarm_pool;
-//! # use swarm_pool::Swarm;
-//! # use swarm_pool::tools::sized_pool::SizedPool16;
+//! # use swarm_pool::{ Swarm, Spawn };
 
-//! # #[derive(Default, Copy, Clone)]     // The object you want to pool must implement these
-//! # pub struct MyPoolObject {           // Swarm uses Copy and therfore only accepts Sized properties!
-//! #     pub name: &static str,          // This means types such as String and Vec aren't allowed
-//! #     pub value: usize,               // The tools module has a few tools that deal with this
-//! #     pub list: SizedPool16<u8>,      // for example SizedPool is a sized array that can hold upto 16 items.
+//! # #[derive(Default, Clone)]
+//! # pub struct MyPoolObject {      
+//! #     pub name: &'static str,     
+//! #     pub value: usize,          
 //! # }
 
 //! // change properties to contain references to our spawned pool objects
@@ -104,18 +94,18 @@
 //! swarm.fetch(&s_john).name = "John";
 //! swarm.fetch(&s_cristy).name = "Cristy";
 //!
-//! swarm.for_all(|target, list, props| {
+//! swarm.for_all(|target, pool, properties| {
 //!
 //!     // john tells critsy to have a value of 2
-//!     if list[*target].name == "John" { 
-//!         if let Some(cristy) = &props.cristy {
-//!             list[cristy.pos()].value = 2; 
+//!     if pool[*target].name == "John" { 
+//!         if let Some(cristy) = &properties.cristy {
+//!             pool[cristy.pos()].value = 2; 
 //!         }
 //!     }
 //!     // cristy tells john to have a value of 1
-//!     if list[*target].name == "Cristy" { 
-//!         if let Some(john) = &props.john {
-//!             list[john.pos()].value = 1; 
+//!     if pool[*target].name == "Cristy" { 
+//!         if let Some(john) = &properties.john {
+//!             pool[john.pos()].value = 1; 
 //!         }
 //!     }
 //! });
@@ -151,7 +141,7 @@
 mod tests;
 pub mod control;
 pub mod types;
-pub mod tools;
+//pub mod tools;
 
 use control::SwarmControl;
 pub use types::*;
@@ -168,7 +158,7 @@ pub struct Swarm<ItemType, Properties> {
     pub properties: Properties,
 }
 
-impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
+impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
 
     /// Create a new Swarm object pool
     /// 
@@ -182,16 +172,15 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// extern crate swarm_pool;
     /// use swarm_pool::Swarm;
-    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
     /// // Swarm uses Copy and therfore only accepts Sized properties!
     /// // This means types such as String and Vec aren't allowed
     /// // The tools module has a few tools that deal with this
     
-    /// #[derive(Default, Copy, Clone)]     
+    /// #[derive(Default, Clone)]     
     /// pub struct MyPoolObject {           
-    ///     pub name: ByteStr,              
+    ///     pub name: &'static str,              
     ///     pub value: usize,               
     /// }
     /// 
@@ -238,7 +227,7 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     pub fn populate(&mut self, items: &[ItemType]) {
         for item in items {
             if let Some(s) = self.spawn() {
-                *self.fetch(&s) = *item;
+                *self.fetch(&s) = item.clone();
             }
         }
     }
@@ -268,12 +257,11 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// extern crate swarm_pool;
     /// use swarm_pool::Swarm;
-    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
-    /// #[derive(Default, Copy, Clone)] 
+    /// #[derive(Default, Clone)] 
     /// pub struct MyPoolObject {
-    ///     pub name: ByteStr,
+    ///     pub name: &'static str,
     ///     pub value: usize,
     /// }
     /// 
@@ -301,12 +289,11 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// extern crate swarm_pool;
     /// use swarm_pool::Swarm;
-    /// use swarm_pool::tools::byte_str::ByteStr;
     /// 
     /// // create an object you want to pool
-    /// #[derive(Default, Copy, Clone)] 
+    /// #[derive(Default, Clone)] 
     /// pub struct MyPoolObject {
-    ///     pub name: ByteStr,
+    ///     pub name: &'static str,
     ///     pub value: usize,
     /// }
     /// 
@@ -389,10 +376,9 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// extern crate swarm_pool;
     /// use swarm_pool::{ Swarm, Spawn };
-    /// use swarm_pool::tools::byte_str::ByteStr;
     ///
     /// // create an object you want to pool
-    /// #[derive(Default, Copy, Clone)] 
+    /// #[derive(Default, Clone)] 
     /// pub struct MyPoolObject {
     ///     pub value: usize,
     /// }
@@ -436,7 +422,7 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// use swarm_pool::{ Swarm, Spawn };
     ///
     /// // create an object you want to pool
-    /// #[derive(Default, Copy, Clone)] 
+    /// #[derive(Default, Clone)] 
     /// pub struct MyPoolObject {
     ///     pub name: &'static str,
     ///     pub value: usize,
@@ -462,7 +448,7 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// # extern crate swarm_pool;
     /// # use swarm_pool::{ Swarm, Spawn };
     /// # // create an object you want to pool
-    /// # #[derive(Default, Copy, Clone)] 
+    /// # #[derive(Default, Clone)] 
     /// # pub struct MyPoolObject { pub name: &'static str, pub value: usize, }
     /// # //
     /// // create properties you want to share with pooled objects
@@ -490,7 +476,7 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// # extern crate swarm_pool;
     /// # use swarm_pool::{ Swarm, Spawn };
-    /// # #[derive(Default, Copy, Clone)] 
+    /// # #[derive(Default, Clone)] 
     /// # pub struct MyPoolObject { pub name: &'static str, pub value: usize }
     /// # //
     /// // create properties you want to share with pooled objects
@@ -553,9 +539,8 @@ impl<ItemType: Default + Copy, Properties> Swarm<ItemType, Properties> {
     /// ```
     /// # extern crate swarm_pool;
     /// # use swarm_pool::{ Swarm, Spawn };
-    /// # use swarm_pool::tools::byte_str::ByteStr;
     /// // create an object you want to pool
-    /// #[derive(Default, Copy, Clone)] 
+    /// #[derive(Default, Clone)] 
     /// pub struct MyPoolObject { 
     ///     pub name: &'static str,
     ///     pub value: usize,
