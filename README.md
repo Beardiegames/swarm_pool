@@ -1,29 +1,31 @@
-# swarm
+# swarm_pool
 An object pooling system for Rust, optimized for perfomance.
 
+## Change log
+ - **version 0.1.7**: 
+    - Removed `Copy` dependencies, PoolObjects do no longer rely on the implementation of the `Copy` trait.
+    - Implemented the `Clone` & `Default` traits for `Spawn`. Spawn.clone() behaves in the same way as Spawn.mirror() does. The These where implemented so that PoolObjects can hold Spawn reference objects as field properties. Default on Spawn should not be used and is only there to make the above possible.
+ - **version 0.1.4**: 
+    - Added iterators `find()`, `for_while()`, `for_each()`, `for_all()` & `enumerate()` to `SwarmComtrol`, these makes it possible to iterate over all spawns inside the update() loop.
+
+## Using the swarm pool
 The pooling system manages object instances of a cutom type,
 and provides update loops to iterate over them.
 
 In order to create a new swarm pool, you need to define what your `pool object` and `swarm properties` types
 are going to look like. Your `pool object` must at leas implement the Default, Copy and Clone traits 
 from the standard library. The `swarm properties`, on the other hand, does not depend on any traits.
-Swarm uses Copy and therfore only accepts Sized properties, this means types such as String and Vec aren't allowed.
-This is where the tools module comes in handy, it provides a few tools that deal with this.
-The tools have not been optimized for performance and use, but is there to get you started. There are other libraries 
-specifically designed to deal with sized object types, consider using these instead of the tools module.
 
-## Basic swarm setup example
-```
+### Basic swarm setup example
+```rust
 extern crate swarm_pool;
 use swarm_pool::Swarm;
-use swarm_pool::tools::sized_pool::SizedPool16;
 
 // create an object you want to pool
-#[derive(Default, Copy, Clone)]     
-pub struct MyPoolObject {           // Swarm uses Copy and therfore only accepts Sized properties!
-    pub name: &static str,          // This means types such as String and Vec aren't allowed
-    pub value: usize,               // The tools module has a few tools that deal with this
-    pub list: SizedPool16<u8>,      // SizedPool is a sized array that can hold upto 16 items.
+#[derive(Default, Clone)]     
+pub struct MyPoolObject {           
+    pub name: &static str,
+    pub value: usize,
 }
 
 // create properties you want to share with pooled objects
@@ -41,8 +43,8 @@ from 0 up to, but not including, the maximum capacity) can be accessed through t
 The difference between spawned and non-spawned pool objects is that spawned object are included in all
 of the Swarm pools iterator methodes and non-spawned object are not.
 
-## Spawning and looping
-```
+### Spawning and looping
+```rust
 let mut swarm = Swarm::<MyPoolObject, _>::new(10, ());
 let spawn1 = swarm.spawn().unwrap();
 let spawn2 = swarm.spawn().unwrap();
@@ -63,8 +65,8 @@ There are 2 powerful methodes that can be used to do so: `Swarm.for_all()` and `
 Both have their advantages and disadvantages, `for_all` loop is fast (equal to a standard vec for loop) but cannot spawn nor kill
 pool objects, `update` is easy to use, gives full control, but is slow (less than half the speed).
 
-## Cross referencing using for_all & update
-```
+### Cross referencing using for_all & update
+```rust
 // change properties to contain references to our spawned pool objects
 pub struct MySwarmProperties { 
     john: Option<Spawn>, 
