@@ -213,6 +213,61 @@ fn killing_spawned_instances() {
  }
 
  #[test]
+ fn kill_all_spawned_instances() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    
+    let spawn1 = swarm.spawn().unwrap();
+    let spawn2 = swarm.spawn().unwrap();
+    let spawn3 = swarm.spawn().unwrap();
+    assert_eq!(swarm.len, 3);
+    assert_eq!(spawn1.active(), true);
+    assert_eq!(spawn2.active(), true);
+    assert_eq!(spawn3.active(), true);
+    
+    swarm.for_each(|obj| obj.value += 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+
+    swarm.kill_all();
+    assert_eq!(swarm.len, 0);
+
+    // After a spawn is killed, it is sill accessible but is not passed to the for loop.
+    // It should not be used anymore.
+    swarm.for_each(|obj| obj.value += 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn3).value, 1);
+    assert_eq!(spawn1.active(), false);
+    assert_eq!(spawn2.active(), false);
+    assert_eq!(spawn3.active(), false);
+
+    swarm.for_all(|tar, list, _props| list[*tar].value += 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn3).value, 1);
+    assert_eq!(spawn1.active(), false);
+    assert_eq!(spawn2.active(), false);
+    assert_eq!(spawn3.active(), false);
+
+    swarm.update(|ctx| ctx.target().value += 1);
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn2).value, 1);
+    assert_eq!(swarm.fetch_ref(&spawn3).value, 1);
+    assert_eq!(spawn1.active(), false);
+    assert_eq!(spawn2.active(), false);
+    assert_eq!(spawn3.active(), false);
+
+    // NOTE: spawn pointers that are killed, go on a re-use stack.
+    // In this case spawn1 is killed and therefore nothing points to the linked data slot
+    // Because we want to re-use the data slot after a kill, new spawns (in this case spawn2)
+    // will points to the same data as spawn1 would have done. 
+    // In this case spawn1 and spawn2 are actually the same pointer, split up by a reference counter.
+    let spawn4 = swarm.spawn().unwrap();
+    swarm.fetch(&spawn4).value = 42;
+    assert_eq!(swarm.fetch_ref(&spawn1).value, 42);
+    assert_eq!(spawn1, spawn4);
+ }
+
+ #[test]
 fn update_cross_referencing() {
     let mut swarm = Swarm::<Minion, TrackSpawns>::new(10, TrackSpawns {
         john: None,
@@ -344,4 +399,84 @@ fn killing_spawns_during_update_loop() {
     assert_eq!(spawn1.active(), false);
     assert_eq!(spawn2.active(), false);
     assert_eq!(spawn3.active(), false);
+}
+
+#[derive(Default, Clone, Debug, PartialEq)] struct Image(bool);
+#[derive(Default, Clone, Debug, PartialEq)] struct Position(f32, f32);
+#[derive(Default, Clone, Debug, PartialEq)] struct Speed(f32);
+
+#[derive(Default, Clone, Debug)]
+pub struct Entity {
+    name: &'static str,
+    
+    image_component: Option<Image>,
+    position_component: Option<Position>,
+    speed_component: Option<Speed>,
+}
+
+
+#[test]
+fn using_swarm_for_ECS() {
+    let mut swarm = Swarm::<Entity, _>::new(10, ());
+    
+    let building = swarm.spawn().unwrap();
+    {
+        let entity = swarm.fetch(&building);
+            entity.name = "Sixteenth Chapel";
+            entity.image_component = Some(Image(false));
+            entity.position_component = Some(Position(3.0, 5.0));
+            entity.speed_component = None;
+    }
+
+    let truck = swarm.spawn().unwrap();
+    {
+        let entity = swarm.fetch(&truck);
+            entity.name = "Cargo truck";
+            entity.image_component = Some(Image(false));
+            entity.position_component = Some(Position(8.0, 6.0));
+            entity.speed_component = Some(Speed(1.0));
+    }
+
+    assert_eq!(swarm.fetch_ref(&building).position_component, Some(Position(3.0, 5.0)));
+    assert_eq!(swarm.fetch_ref(&building).image_component, Some(Image(false)));
+
+    assert_eq!(swarm.fetch_ref(&truck).position_component, Some(Position(8.0, 6.0)));
+    assert_eq!(swarm.fetch_ref(&truck).image_component, Some(Image(false)));
+
+    // # MOVE SYSTEM
+    swarm.for_all(|tar, pool, props|{
+        if let ( 
+            Some(position_component), 
+            Some(speed_component)
+        ) = (
+            &mut pool[*tar].position_component, 
+            &mut pool[*tar].speed_component 
+        ){
+            position_component.0 += speed_component.0;
+        }
+    });
+
+    // Only the truck moves from position 8.0 to 9.0, the building does not 
+    // move because it does not have a Speed component which is required 
+    // by the move system.
+    assert_eq!(swarm.fetch_ref(&building).position_component, Some(Position(3.0, 5.0)));
+    assert_eq!(swarm.fetch_ref(&truck).position_component, Some(Position(9.0, 6.0)));
+
+    // # DRAW SYSTEM
+    swarm.for_all(|tar, pool, props|{
+        if let ( 
+            Some(position_component), 
+            Some(image_component)
+        ) = (
+            &mut pool[*tar].position_component, 
+            &mut pool[*tar].image_component 
+        ){
+            image_component.0 = true;
+        }
+    });
+
+    // Both building and truck should be updated because both have a Position 
+    // and an Image component, which are required by the draw system.
+    assert_eq!(swarm.fetch_ref(&building).image_component, Some(Image(true)));
+    assert_eq!(swarm.fetch_ref(&truck).image_component, Some(Image(true)));
 }

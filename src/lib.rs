@@ -319,6 +319,14 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
         self.order[reset_order] = reset_order;
     }
 
+    /// Remove all spawn instances
+    pub fn kill_all(&mut self) {
+        for spawn in &mut self.spawns {
+            spawn.0.borrow_mut().active = false;
+        }
+        self.len = 0;
+    }
+
     /// Returns a spawn reference object from an object position within the pool
     pub fn fetch_spawn(&self, pos: &ObjectPosition) -> Spawn {
         self.spawns[*pos].mirror()
