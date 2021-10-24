@@ -9,6 +9,8 @@ An object pooling system for Rust, optimized for perfomance.
 
 <h2 id="changelog">Changelog</h2>
 
+ - **version 0.1.9**:
+    - Implemented factories for creating pool object with specific values
  - **version 0.1.8**:
     - Added `kill_all()` methode to `Swarm`. Kill all removes all spawns at once, can only be called from Swarm itself, NOT from SwarmControl.
     - Added Benchmark and ECS documentation to this README.

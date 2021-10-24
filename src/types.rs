@@ -32,6 +32,14 @@ pub type ForAllHandler<ItemType, Properties> = fn(&ObjectPosition, &mut [ItemTyp
 /// is currently iterating over.
 pub type UpdateHandler<ItemType, Properties> = fn(&mut SwarmControl<ItemType, Properties>);
 
+pub type FactoryHandler<ItemType> = fn(&mut ItemType);
+
+
+pub struct Factory<ItemType> {
+    pub type_def: usize,
+    pub methode: FactoryHandler<ItemType>,
+}
+
 // spawns and tags
 
 /// A spawn is a pointer that points to a data object in the swarm pool.

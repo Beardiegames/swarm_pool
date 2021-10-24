@@ -480,3 +480,44 @@ fn using_swarm_for_ECS() {
     assert_eq!(swarm.fetch_ref(&building).image_component, Some(Image(true)));
     assert_eq!(swarm.fetch_ref(&truck).image_component, Some(Image(true)));
 }
+
+enum UnitType { Soldier, Truck, }
+
+fn soldier_factory(m: &mut Minion) {
+    m.name = "soldier";
+    m.value = 1;
+}
+
+fn truck_factory(m: &mut Minion) {
+    m.name = "truck";
+    m.value = 2;
+}
+
+#[test]
+fn can_add_object_factories() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    
+    swarm.add_factory(0, soldier_factory);
+    swarm.add_factory(1, truck_factory);
+
+    assert_eq!(swarm.factories[0].type_def, 0);
+    assert_eq!(swarm.factories[1].type_def, 1);
+}
+
+#[test]
+fn spawn_specific_type_by_factory_definition() {
+    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    
+    swarm.add_factory(0, soldier_factory);
+    swarm.add_factory(1, truck_factory);
+
+    let soldier_1 = swarm.spawn_type(0).unwrap();
+    let truck_1 = swarm.spawn_type(1).unwrap();
+    let truck_2 = swarm.spawn_type(1).unwrap();
+    let soldier_2 = swarm.spawn_type(0).unwrap();
+
+    assert_eq!(swarm.fetch_ref(&soldier_1).name, "soldier");
+    assert_eq!(swarm.fetch_ref(&soldier_2).name, "soldier");
+    assert_eq!(swarm.fetch_ref(&truck_1).name, "truck");
+    assert_eq!(swarm.fetch_ref(&truck_2).name, "truck");
+}

@@ -154,6 +154,7 @@ pub struct Swarm<ItemType, Properties> {
     len: usize,
     max: usize,
     order: Vec<usize>,
+    factories: Vec<Factory<ItemType>>,
 
     pub properties: Properties,
 }
@@ -208,6 +209,7 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
             max: capacity,
             order,
             properties,
+            factories: Vec::new(),
         }
     }
     /// Create a new spawn for every item in the `items` list and gives
@@ -246,6 +248,42 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
         }
     }
 
+    /// Add methodes as factories to the swarm that can be used to create
+    /// pool instances with specific values. The newly spawned instance is
+    /// passed through the added methode when using `spawn_type(type_def)`, and can 
+    /// be altered by the factory methode.
+    /// 
+    /// This can be useful for creating pool instances of a different type
+    /// 
+    /// # Example
+    /// ```
+    /// enum UnitType { Soldier, Truck, }
+    ///
+    /// fn soldier_factory(m: &mut Minion) {
+    ///     m.name = "soldier";
+    ///     m.value = 1;
+    /// }
+    ///
+    /// fn truck_factory(m: &mut Minion) {
+    ///     m.name = "truck";
+    ///     m.value = 2;
+    /// }
+    ///
+    /// fn can_add_object_factories() {
+    ///     let mut swarm = Swarm::<Minion, _>::new(10, ());
+    ///
+    ///     swarm.add_factory(0, soldier_factory);
+    ///     swarm.add_factory(1, truck_factory);
+    ///
+    ///     assert_eq!(swarm.factories[0].type_def, 0);
+    ///     assert_eq!(swarm.factories[1].type_def, 1);
+    /// }
+    /// ``` 
+
+    pub fn add_factory(&mut self, type_def: usize, factory_handler: FactoryHandler<ItemType>) {
+        self.factories.push(Factory { type_def, methode: factory_handler })
+    }
+
     /// Create a new pool instance. 
     /// Spawns are pool instances that will be included in the update loops 
     /// provided by Swarm, as long as they are active and not killed yet.
@@ -281,6 +319,58 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
         let result = ctl.spawn();
         self.len = ctl.len;
         result
+    }
+
+    /// Create a new pool instance with specific values. The instances values are
+    /// set by passing it through a predefined factory. See `add_factory(type_def, methode)`
+    /// 
+    /// # Example
+    /// ```
+    /// enum UnitType { Soldier, Truck, }
+    ///
+    /// fn soldier_factory(m: &mut Minion) {
+    ///     m.name = "soldier";
+    ///     m.value = 1;
+    /// }
+    ///
+    /// fn truck_factory(m: &mut Minion) {
+    ///     m.name = "truck";
+    ///     m.value = 2;
+    /// }
+    ///
+    /// fn spawn_specific_type_by_factory_definition() {
+    ///     let mut swarm = Swarm::<Minion, _>::new(10, ());
+    /// 
+    ///     swarm.add_factory(0, soldier_factory);
+    ///     swarm.add_factory(1, truck_factory);
+    ///
+    ///     let soldier_1 = swarm.spawn_type(0).unwrap();
+    ///     let truck_1 = swarm.spawn_type(1).unwrap();
+    ///     let truck_2 = swarm.spawn_type(1).unwrap();
+    ///     let soldier_2 = swarm.spawn_type(0).unwrap();
+    ///
+    ///     assert_eq!(swarm.fetch_ref(&soldier_1).name, "soldier");
+    ///     assert_eq!(swarm.fetch_ref(&soldier_2).name, "soldier");
+    ///     assert_eq!(swarm.fetch_ref(&truck_1).name, "truck");
+    ///     assert_eq!(swarm.fetch_ref(&truck_2).name, "truck");
+    /// }
+    /// ```
+    
+    pub fn spawn_type(&mut self, type_def: usize) -> Option<Spawn> {
+        let some_spawn = self.spawn().clone();
+
+        if let (Some(factory), Some(spawn)) = (
+            self.factories
+                .iter_mut()
+                .find(|x| x.type_def == type_def),
+            some_spawn
+        ) {
+            (factory.methode)(&mut self.pool[spawn.0.borrow().pos]);
+            Some(spawn.mirror())
+        }
+        else {
+            None
+        }
     }
 
     /// Remove a spawn instance from the swarm pool update loops
