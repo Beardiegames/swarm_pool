@@ -482,20 +482,23 @@ fn using_swarm_for_ECS() {
 }
 
 enum UnitType { Soldier, Truck, }
+type UnitNames = (&'static str, &'static str);
 
-fn soldier_factory(m: &mut Minion) {
-    m.name = "soldier";
+fn soldier_factory(m: &mut Minion, n: &mut UnitNames) {
+    m.name = n.0;
     m.value = 1;
 }
 
-fn truck_factory(m: &mut Minion) {
-    m.name = "truck";
+fn truck_factory(m: &mut Minion, n: &mut UnitNames) {
+    m.name = n.1;
     m.value = 2;
 }
 
 #[test]
 fn can_add_object_factories() {
-    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    let names = ("soldier", "truck");
+    let mut swarm = Swarm::<Minion, UnitNames>::new(
+        10, names);
     
     swarm.add_factory(0, soldier_factory);
     swarm.add_factory(1, truck_factory);
@@ -506,7 +509,8 @@ fn can_add_object_factories() {
 
 #[test]
 fn spawn_specific_type_by_factory_definition() {
-    let mut swarm = Swarm::<Minion, _>::new(10, ());
+    let names = ("soldier", "truck");
+    let mut swarm = Swarm::<Minion, UnitNames>::new(10, names);
     
     swarm.add_factory(0, soldier_factory);
     swarm.add_factory(1, truck_factory);

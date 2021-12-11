@@ -9,6 +9,8 @@ An object pooling system for Rust, optimized for perfomance.
 
 <h2 id="changelog">Changelog</h2>
 
+ - **version 0.2.0**:
+    - Added properties to the factory callback. This allows property values to be used when spawning via factories.
  - **version 0.1.9**:
     - Implemented factories for creating pool object with specific values
  - **version 0.1.8**:

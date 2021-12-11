@@ -154,7 +154,7 @@ pub struct Swarm<ItemType, Properties> {
     len: usize,
     max: usize,
     order: Vec<usize>,
-    factories: Vec<Factory<ItemType>>,
+    factories: Vec<Factory<ItemType, Properties>>,
 
     pub properties: Properties,
 }
@@ -257,30 +257,45 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    /// enum UnitType { Soldier, Truck, }
+    /// extern crate swarm_pool;
+    /// use swarm_pool::Swarm;
+    /// 
+    /// #[derive(Default, Copy, Clone)]
+    /// pub struct Minion {
+    ///     name: &'static str,
+    ///     value: usize,
+    /// }
+    /// 
+    /// type UnitNames = (&'static str, &'static str);
     ///
-    /// fn soldier_factory(m: &mut Minion) {
-    ///     m.name = "soldier";
+    /// fn soldier_factory(m: &mut Minion, n: &mut UnitNames) {
+    ///     m.name = n.0;
     ///     m.value = 1;
     /// }
     ///
-    /// fn truck_factory(m: &mut Minion) {
-    ///     m.name = "truck";
+    /// fn truck_factory(m: &mut Minion, n: &mut UnitNames) {
+    ///     m.name = n.1;
     ///     m.value = 2;
     /// }
     ///
-    /// fn can_add_object_factories() {
-    ///     let mut swarm = Swarm::<Minion, _>::new(10, ());
+    /// fn spawn_specific_type_by_factory_definition() {
+    ///     let names: UnitNames = ("soldier", "truck");
+    ///     let mut swarm = Swarm::<Minion, UnitNames>::new(10, names);
     ///
     ///     swarm.add_factory(0, soldier_factory);
     ///     swarm.add_factory(1, truck_factory);
+    /// 
+    ///     let soldier = swarm.spawn_type(0).unwrap();
+    ///     let truck = swarm.spawn_type(1).unwrap();
     ///
-    ///     assert_eq!(swarm.factories[0].type_def, 0);
-    ///     assert_eq!(swarm.factories[1].type_def, 1);
+    ///     assert_eq!(swarm.fetch_ref(&soldier).name, "soldier");
+    ///     assert_eq!(swarm.fetch_ref(&soldier).value, 1);
+    ///     assert_eq!(swarm.fetch_ref(&truck).name, "truck");
+    ///     assert_eq!(swarm.fetch_ref(&truck).value, 2);
     /// }
     /// ``` 
 
-    pub fn add_factory(&mut self, type_def: usize, factory_handler: FactoryHandler<ItemType>) {
+    pub fn add_factory(&mut self, type_def: usize, factory_handler: FactoryHandler<ItemType, Properties>) {
         self.factories.push(Factory { type_def, methode: factory_handler })
     }
 
@@ -326,20 +341,30 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
     /// 
     /// # Example
     /// ```
-    /// enum UnitType { Soldier, Truck, }
+    /// extern crate swarm_pool;
+    /// use swarm_pool::Swarm;
+    /// 
+    /// #[derive(Default, Copy, Clone)]
+    /// pub struct Minion {
+    ///     name: &'static str,
+    ///     value: usize,
+    /// }
+    /// 
+    /// type UnitNames = (&'static str, &'static str);
     ///
-    /// fn soldier_factory(m: &mut Minion) {
-    ///     m.name = "soldier";
+    /// fn soldier_factory(m: &mut Minion, n: &mut UnitNames) {
+    ///     m.name = n.0;
     ///     m.value = 1;
     /// }
     ///
-    /// fn truck_factory(m: &mut Minion) {
-    ///     m.name = "truck";
+    /// fn truck_factory(m: &mut Minion, n: &mut UnitNames) {
+    ///     m.name = n.1;
     ///     m.value = 2;
     /// }
     ///
     /// fn spawn_specific_type_by_factory_definition() {
-    ///     let mut swarm = Swarm::<Minion, _>::new(10, ());
+    ///     let names: UnitNames = ("soldier", "truck");
+    ///     let mut swarm = Swarm::<Minion, UnitNames>::new(10, names);
     /// 
     ///     swarm.add_factory(0, soldier_factory);
     ///     swarm.add_factory(1, truck_factory);
@@ -365,7 +390,7 @@ impl<ItemType: Default + Clone, Properties> Swarm<ItemType, Properties> {
                 .find(|x| x.type_def == type_def),
             some_spawn
         ) {
-            (factory.methode)(&mut self.pool[spawn.0.borrow().pos]);
+            (factory.methode)(&mut self.pool[spawn.0.borrow().pos], &mut self.properties);
             Some(spawn.mirror())
         }
         else {

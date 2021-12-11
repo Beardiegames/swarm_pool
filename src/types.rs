@@ -32,12 +32,12 @@ pub type ForAllHandler<ItemType, Properties> = fn(&ObjectPosition, &mut [ItemTyp
 /// is currently iterating over.
 pub type UpdateHandler<ItemType, Properties> = fn(&mut SwarmControl<ItemType, Properties>);
 
-pub type FactoryHandler<ItemType> = fn(&mut ItemType);
+pub type FactoryHandler<ItemType, Properties> = fn(&mut ItemType, &mut Properties);
 
 
-pub struct Factory<ItemType> {
+pub struct Factory<ItemType, Properties> {
     pub type_def: usize,
-    pub methode: FactoryHandler<ItemType>,
+    pub methode: FactoryHandler<ItemType, Properties>,
 }
 
 // spawns and tags
